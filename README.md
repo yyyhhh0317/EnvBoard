@@ -191,11 +191,11 @@ src/
 - [x] v0.2.0 — `package.json` / `requirements.txt` / `pyproject.toml` / lockfile 解析展示
 - [x] v0.2.0 — 依赖分类过滤、编辑、导出
 - [x] v0.2.0 — npm / PyPI 最新版本查询（opt-in）
-- [ ] v0.3.0 — 多环境管理（dev / test / staging / prod）
-- [ ] v0.3.0 — 本地 CLI 执行安装/卸载命令（Phase 2）
-- [ ] v0.3.0 — 配置模板与变量校验
-- [ ] v0.4.0 — 本地加密存储敏感变量
-- [ ] v0.4.0 — 变更历史
+- [x] v0.2.1 — 配置模板与变量校验
+- [ ] v0.3.0 — 多环境切换（dev / test / staging / prod）
+- [ ] v0.4.0 — 本地 CLI 执行安装/卸载命令（Phase 2）
+- [ ] v0.5.0 — 本地加密存储敏感变量
+- [ ] v0.5.0 — 变更历史
 - [ ] v1.0.0 — 完善文档与稳定发布
 
 欢迎在 [Issues](https://github.com/yyyhhh0317/EnvBoard/issues) 提交需求或反馈。
