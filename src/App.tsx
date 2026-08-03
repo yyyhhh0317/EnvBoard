@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Header } from './components/Header/Header'
 import { EnvImport } from './components/EnvImport/EnvImport'
 import { EnvTable } from './components/EnvTable/EnvTable'
@@ -8,6 +8,7 @@ import { EnvExport } from './components/EnvExport/EnvExport'
 import { DependencyTable } from './components/DependencyTable/DependencyTable'
 import { DependencyEditor } from './components/DependencyEditor/DependencyEditor'
 import { DependencyExport } from './components/DependencyExport/DependencyExport'
+import { TemplatePicker } from './components/TemplatePicker/TemplatePicker'
 import { useTheme } from './hooks/useTheme'
 import { createEmptyVariable, parseEnvFile } from './utils/parser/envParser'
 import { parsePackageJson } from './utils/parser/packageJsonParser'
@@ -15,15 +16,21 @@ import { parseRequirements } from './utils/parser/requirementsParser'
 import { parsePyproject } from './utils/parser/pyprojectParser'
 import { parseLockfile } from './utils/parser/lockfileParser'
 import { detectProjectType } from './utils/parser/detector'
+import { validateVariables } from './utils/validator'
 import type {
   CompareItem,
   Dependency,
   DependencyParseResult,
   EnvVariable,
   ProjectType,
+  TemplateVariable,
 } from './types'
 
 function genDepId(): string {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
+}
+
+function genEnvId(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 }
 
@@ -33,10 +40,19 @@ export default function App() {
   // .env 模式状态
   const [variables, setVariables] = useState<EnvVariable[]>([])
   const [editingEnv, setEditingEnv] = useState<EnvVariable | null>(null)
+  // 当前应用的模板变量（用于校验）
+  const [templateVars, setTemplateVars] = useState<TemplateVariable[]>([])
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
 
   // 依赖模式状态
   const [depResult, setDepResult] = useState<DependencyParseResult | null>(null)
   const [editingDep, setEditingDep] = useState<Dependency | null>(null)
+
+  // 派生校验结果
+  const issues = useMemo(
+    () => validateVariables(variables, templateVars),
+    [variables, templateVars],
+  )
 
   // 公共状态
   const [projectType, setProjectType] = useState<ProjectType | null>(null)
@@ -132,7 +148,22 @@ export default function App() {
     setProjectType(null)
     setFilename(null)
     setErrors([])
+    setTemplateVars([])
   }, [])
+
+  // 应用模板：合并变量并更新模板变量（用于后续校验）
+  const handleApplyTemplate = useCallback(
+    (newVars: EnvVariable[], tplVars: TemplateVariable[]) => {
+      setVariables(newVars)
+      // 合并模板变量定义（同 key 覆盖）
+      setTemplateVars((prev) => {
+        const map = new Map(prev.map((t) => [t.key, t]))
+        for (const t of tplVars) map.set(t.key, t)
+        return Array.from(map.values())
+      })
+    },
+    [],
+  )
 
   const hasData = projectType !== null
 
@@ -162,7 +193,7 @@ export default function App() {
                   上传 <code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">.env</code>、<code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">package.json</code>、<code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">requirements.txt</code> 等配置文件，即可查看、编辑、对比与导出。敏感变量自动脱敏，数据仅在浏览器本地处理。
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs">
-                  {['.env 解析', '依赖管理', '敏感脱敏', '版本查询', '对比同步', '多格式导出', '暗色模式'].map((t) => (
+                  {['.env 解析', '依赖管理', '配置模板', '变量校验', '敏感脱敏', '对比同步', '多格式导出', '暗色模式'].map((t) => (
                     <span key={t} className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5 font-medium backdrop-blur-sm transition hover:bg-white/20">
                       {t}
                     </span>
@@ -196,10 +227,13 @@ export default function App() {
               <>
                 <EnvTable
                   variables={variables}
+                  issues={issues}
+                  hasTemplate={templateVars.length > 0}
                   onEdit={setEditingEnv}
                   onAdd={() => setEditingEnv(createEmptyVariable())}
                   onDelete={(id) => setVariables((prev) => prev.filter((v) => v.id !== id))}
                   onToggleSensitive={handleToggleSensitive}
+                  onOpenTemplate={() => setTemplatePickerOpen(true)}
                 />
                 <div className="grid gap-6 lg:grid-cols-2">
                   <EnvCompare variables={variables} onSync={handleSync} />
@@ -240,6 +274,13 @@ export default function App() {
 
       <EnvEditor variable={editingEnv} onSave={handleSaveEnv} onClose={() => setEditingEnv(null)} />
       <DependencyEditor dependency={editingDep} onSave={handleSaveDep} onClose={() => setEditingDep(null)} />
+      <TemplatePicker
+        open={templatePickerOpen}
+        variables={variables}
+        genId={genEnvId}
+        onApply={handleApplyTemplate}
+        onClose={() => setTemplatePickerOpen(false)}
+      />
 
       <footer className="border-t border-slate-200/80 py-6 text-center text-xs text-slate-400 dark:border-slate-800/80">
         <p>EnvBoard · 环境配置可视化管理 · 数据仅在浏览器本地处理</p>

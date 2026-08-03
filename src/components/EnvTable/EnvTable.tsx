@@ -1,37 +1,48 @@
-// 变量列表表格：搜索、脱敏、增删改、复制
+// 变量列表表格：搜索、脱敏、增删改、复制、校验提示
 import { useMemo, useState } from 'react'
-import type { EnvVariable } from '../../types'
+import type { EnvVariable, ValidationIssue } from '../../types'
 import { maskValue } from '../../utils/sensitive'
 import { copyToClipboard } from '../../utils/formatter/exporter'
+import { countIssues, groupIssuesByVariable } from '../../utils/validator'
 
 interface EnvTableProps {
   variables: EnvVariable[]
+  issues: ValidationIssue[]
+  hasTemplate: boolean
   onEdit: (variable: EnvVariable) => void
   onAdd: () => void
   onDelete: (id: string) => void
   onToggleSensitive: (id: string) => void
+  onOpenTemplate: () => void
 }
 
 export function EnvTable({
   variables,
+  issues,
+  hasTemplate,
   onEdit,
   onAdd,
   onDelete,
   onToggleSensitive,
+  onOpenTemplate,
 }: EnvTableProps) {
   const [search, setSearch] = useState('')
   const [revealAll, setRevealAll] = useState(false)
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [showOnlyIssues, setShowOnlyIssues] = useState(false)
+
+  const issuesByVar = useMemo(() => groupIssuesByVariable(issues), [issues])
+  const { errors: errorCount, warnings: warningCount } = useMemo(() => countIssues(issues), [issues])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return variables
-    return variables.filter(
-      (v) =>
-        v.key.toLowerCase().includes(q) || v.value.toLowerCase().includes(q),
-    )
-  }, [variables, search])
+    return variables.filter((v) => {
+      if (showOnlyIssues && !issuesByVar.has(v.id)) return false
+      if (!q) return true
+      return v.key.toLowerCase().includes(q) || v.value.toLowerCase().includes(q)
+    })
+  }, [variables, search, showOnlyIssues, issuesByVar])
 
   const toggleReveal = (id: string) => {
     setRevealedIds((prev) => {
@@ -74,12 +85,40 @@ export function EnvTable({
           />
         </div>
 
+        {issues.length > 0 && (
+          <button
+            onClick={() => setShowOnlyIssues((v) => !v)}
+            className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+              showOnlyIssues
+                ? 'border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-900/30 dark:text-amber-300'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
+            }`}
+            title="只看有校验问题的变量"
+          >
+            仅看问题（{issues.length}）
+          </button>
+        )}
+
         <button
           onClick={() => setRevealAll((v) => !v)}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
           title="显示/隐藏所有敏感值"
         >
           {revealAll ? '隐藏敏感值' : '显示敏感值'}
+        </button>
+
+        <button
+          onClick={onOpenTemplate}
+          className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 transition hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+          title="配置模板"
+        >
+          <span className="flex items-center gap-1.5">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            模板
+            {hasTemplate && <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />}
+          </span>
         </button>
 
         <button
@@ -90,6 +129,25 @@ export function EnvTable({
         </button>
       </div>
 
+      {/* 校验汇总条 */}
+      {issues.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200/80 px-4 py-2.5 text-xs dark:border-slate-700/80">
+          {errorCount > 0 && (
+            <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+              {errorCount} 个错误
+            </span>
+          )}
+          {warningCount > 0 && (
+            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {warningCount} 个警告
+            </span>
+          )}
+          <span className="text-slate-400">校验基于模板期望类型、命名规范与重复 key</span>
+        </div>
+      )}
+
       {/* 表格 */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
@@ -99,13 +157,14 @@ export function EnvTable({
               <th className="min-w-[160px] px-4 py-3">Key</th>
               <th className="px-4 py-3">Value</th>
               <th className="hidden w-48 px-4 py-3 md:table-cell">注释</th>
+              <th className="w-24 px-4 py-3 text-center">校验</th>
               <th className="w-40 px-4 py-3 text-right">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
                   {variables.length === 0 ? '暂无变量，请先导入或添加' : '没有匹配的变量'}
                 </td>
               </tr>
@@ -113,12 +172,14 @@ export function EnvTable({
 
             {filtered.map((v) => {
               const revealed = revealAll || revealedIds.has(v.id)
+              const varIssues = issuesByVar.get(v.id) ?? []
+              const hasError = varIssues.some((i) => i.severity === 'error')
               return (
                 <tr
                   key={v.id}
                   className={`transition hover:bg-slate-50 dark:hover:bg-slate-700/30 ${
                     v.isDisabled ? 'opacity-60' : ''
-                  } ${v.error ? 'bg-red-50/50 dark:bg-red-900/10' : ''}`}
+                  } ${v.error || hasError ? 'bg-red-50/50 dark:bg-red-900/10' : ''}`}
                 >
                   {/* 状态 */}
                   <td className="px-4 py-3">
@@ -174,6 +235,45 @@ export function EnvTable({
                       <span className="line-clamp-1">{v.comment}</span>
                     ) : (
                       <span className="text-slate-300 dark:text-slate-600">—</span>
+                    )}
+                  </td>
+
+                  {/* 校验 */}
+                  <td className="px-4 py-3 text-center">
+                    {varIssues.length > 0 ? (
+                      <div className="group relative inline-flex">
+                        <span
+                          className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+                            hasError
+                              ? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300'
+                              : 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300'
+                          }`}
+                        >
+                          {varIssues.length}
+                        </span>
+                        {/* 悬浮提示 */}
+                        <div className="invisible absolute right-0 top-6 z-10 w-56 rounded-lg border border-slate-200 bg-white p-2 text-left text-xs shadow-lg group-hover:visible dark:border-slate-700 dark:bg-slate-800">
+                          {varIssues.map((issue, idx) => (
+                            <div
+                              key={idx}
+                              className={`flex items-start gap-1.5 py-0.5 ${
+                                issue.severity === 'error' ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'
+                              }`}
+                            >
+                              <span className="mt-0.5">
+                                {issue.severity === 'error' ? '✕' : '⚠'}
+                              </span>
+                              <span>{issue.message}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-emerald-500" title="通过校验">
+                        <svg className="mx-auto h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
                     )}
                   </td>
 
@@ -261,6 +361,12 @@ export function EnvTable({
         {variables.some((v) => v.isSensitive) && (
           <span> · {variables.filter((v) => v.isSensitive).length} 个敏感</span>
         )}
+        {issues.length > 0 && (
+          <span>
+            {' '}· <span className="text-red-500">{errorCount} 错误</span> / <span className="text-amber-500">{warningCount} 警告</span>
+          </span>
+        )}
+        {hasTemplate && <span> · 已应用模板</span>}
       </div>
     </div>
   )

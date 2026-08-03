@@ -113,3 +113,70 @@ export interface DependencyParseResult {
 
 /** registry 来源类型 */
 export type RegistryType = 'npm' | 'pypi'
+
+// ===== 配置模板与变量校验（v0.3.0）=====
+
+/** 模板分类 */
+export type TemplateCategory = 'general' | 'frontend' | 'python' | 'custom'
+
+/** 配置模板 */
+export interface ConfigTemplate {
+  /** 唯一标识 */
+  id: string
+  /** 模板名称 */
+  name: string
+  /** 描述 */
+  description: string
+  /** 分类 */
+  category: TemplateCategory
+  /** 模板变量列表 */
+  variables: TemplateVariable[]
+}
+
+/** 模板中的单个变量定义 */
+export interface TemplateVariable {
+  /** 变量名 */
+  key: string
+  /** 占位值 */
+  placeholder: string
+  /** 说明 */
+  comment: string
+  /** 是否敏感 */
+  isSensitive: boolean
+  /** 期望类型 */
+  expectedType?: VariableType
+  /** 是否必填 */
+  required?: boolean
+}
+
+/** 变量期望类型 */
+export type VariableType = 'string' | 'number' | 'boolean' | 'url' | 'email'
+
+/** 校验严重级别 */
+export type ValidationSeverity = 'error' | 'warning'
+
+/** 校验结果项 */
+export interface ValidationIssue {
+  /** 关联的变量 id */
+  variableId: string
+  /** 变量名 */
+  key: string
+  /** 严重级别 */
+  severity: ValidationSeverity
+  /** 规则类型 */
+  rule: ValidationRule
+  /** 描述信息 */
+  message: string
+}
+
+/** 校验规则类型 */
+export type ValidationRule =
+  | 'empty-value'        // 值为空
+  | 'placeholder-value'  // 值是占位符
+  | 'invalid-number'     // 非数字
+  | 'invalid-url'        // 非合法 URL
+  | 'invalid-boolean'    // 非布尔值
+  | 'naming-lowercase'   // 命名含小写
+  | 'naming-space'       // 命名含空格
+  | 'duplicate-key'      // 重复 key
+  | 'sensitive-empty'    // 敏感值为空
