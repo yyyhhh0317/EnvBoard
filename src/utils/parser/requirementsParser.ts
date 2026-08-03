@@ -36,6 +36,22 @@ function detectGroupFromComment(comment: string): DependencyCategory | null {
   return null
 }
 
+/** 从注释标题提取子分组名
+ * 输入示例："生产依赖 - Web 框架" 或 "开发依赖 - 测试"
+ * 返回："Web 框架" / "测试"
+ * 若无分隔符，返回 null
+ */
+function extractSubgroup(comment: string): string | null {
+  // 支持 " - " / "：" / ":" 作为分隔符
+  const parts = comment.split(/\s*[-—:：]\s*/)
+  if (parts.length >= 2) {
+    // 取最后一个非空部分作为子分组名
+    const last = parts[parts.length - 1].trim()
+    return last || null
+  }
+  return null
+}
+
 export function parseRequirements(
   content: string,
   filename = 'requirements.txt',
@@ -47,7 +63,7 @@ export function parseRequirements(
 
   // 当前分组分类，默认为生产依赖
   let currentCategory: DependencyCategory = 'dependencies'
-  let currentGroupName = '生产依赖'
+  let currentSubgroup: string | null = null
 
   const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/)
 
@@ -59,12 +75,14 @@ export function parseRequirements(
     // 注释行：检测分组切换
     if (stripped.startsWith('#')) {
       const inner = stripped.slice(1).trim()
-      // 形如 # ===== 开发依赖 ===== 的分组标题
+      // 形如 # ===== 生产依赖 - Web 框架 ===== 的分组标题
       const detected = detectGroupFromComment(inner)
       if (detected) {
         currentCategory = detected
-        // 提取分组名（去掉 ===== 等装饰符）
-        currentGroupName = inner.replace(/^[=\-*/\s]+|[=\-*/\s]+$/g, '').trim() || inner
+        // 去掉 ===== 等装饰符，得到纯文字
+        const cleanText = inner.replace(/^[=\-*/\s]+|[=\-*/\s]+$/g, '').trim()
+        // 从纯文字中提取子分组名
+        currentSubgroup = extractSubgroup(cleanText) ?? cleanText
       }
       return
     }
@@ -89,7 +107,8 @@ export function parseRequirements(
         name: stripped.split('#')[0].trim(),
         versionSpec: '',
         category: currentCategory,
-        comment: `VCS/URL 来源 · ${currentGroupName}`,
+        subgroup: currentSubgroup ?? undefined,
+        comment: 'VCS/URL 来源',
         line: lineNum,
       })
       return
@@ -120,7 +139,8 @@ export function parseRequirements(
       name,
       versionSpec,
       category: currentCategory,
-      comment: inlineComment || currentGroupName,
+      subgroup: currentSubgroup ?? undefined,
+      comment: inlineComment || undefined,
       line: lineNum,
     })
   })

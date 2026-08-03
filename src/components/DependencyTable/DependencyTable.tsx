@@ -34,6 +34,7 @@ export function DependencyTable({
 }: DependencyTableProps) {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string>('all')
+  const [activeSubgroup, setActiveSubgroup] = useState<string>('all')
   const [checking, setChecking] = useState(false)
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [versionEnabled, setVersionEnabled] = useState(false)
@@ -51,14 +52,28 @@ export function DependencyTable({
     return ['all', ...Array.from(set)]
   }, [deps])
 
+  // 当前分类下的子分组列表
+  const subgroups = useMemo(() => {
+    const scoped = activeCategory === 'all' ? deps : deps.filter((d) => d.category === activeCategory)
+    const set = new Set(scoped.map((d) => d.subgroup).filter(Boolean) as string[])
+    return Array.from(set)
+  }, [deps, activeCategory])
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return deps.filter((d) => {
       if (activeCategory !== 'all' && d.category !== activeCategory) return false
+      if (activeSubgroup !== 'all' && d.subgroup !== activeSubgroup) return false
       if (!q) return true
       return d.name.toLowerCase().includes(q) || d.versionSpec.toLowerCase().includes(q)
     })
-  }, [deps, search, activeCategory])
+  }, [deps, search, activeCategory, activeSubgroup])
+
+  // 切换分类时重置子分组选择
+  const handleCategoryChange = (cat: string) => {
+    setActiveCategory(cat)
+    setActiveSubgroup('all')
+  }
 
   const outdatedCount = deps.filter((d) => d.isOutdated).length
 
@@ -143,11 +158,11 @@ export function DependencyTable({
 
       {/* 分类标签 */}
       {categories.length > 2 && (
-        <div className="flex flex-wrap gap-2 border-b border-slate-200/80 px-4 py-2.5 dark:border-slate-700/80">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 px-4 py-2.5 dark:border-slate-700/80">
           {categories.map((cat) => (
             <button
               key={cat}
-              onClick={() => setActiveCategory(cat)}
+              onClick={() => handleCategoryChange(cat)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                 activeCategory === cat
                   ? 'bg-emerald-600 text-white'
@@ -155,6 +170,36 @@ export function DependencyTable({
               }`}
             >
               {cat === 'all' ? '全部' : CATEGORY_LABEL[cat] ?? cat}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 子分组标签 */}
+      {subgroups.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/60 px-4 py-2 dark:border-slate-700/60">
+          <span className="text-xs text-slate-400">分组：</span>
+          <button
+            onClick={() => setActiveSubgroup('all')}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
+              activeSubgroup === 'all'
+                ? 'bg-teal-600 text-white'
+                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600'
+            }`}
+          >
+            全部
+          </button>
+          {subgroups.map((sg) => (
+            <button
+              key={sg}
+              onClick={() => setActiveSubgroup(sg)}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition ${
+                activeSubgroup === sg
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600'
+              }`}
+            >
+              {sg}
             </button>
           ))}
         </div>
@@ -181,6 +226,7 @@ export function DependencyTable({
               {deps.some((d) => d.lockedVersion) && <th className="px-4 py-3">锁定版本</th>}
               {versionEnabled && <th className="px-4 py-3">最新版本</th>}
               <th className="hidden px-4 py-3 md:table-cell">分类</th>
+              {subgroups.length > 0 && <th className="hidden px-4 py-3 lg:table-cell">分组</th>}
               <th className="w-32 px-4 py-3 text-right">操作</th>
             </tr>
           </thead>
@@ -233,6 +279,17 @@ export function DependencyTable({
                     {CATEGORY_LABEL[d.category] ?? d.category}
                   </span>
                 </td>
+                {subgroups.length > 0 && (
+                  <td className="hidden px-4 py-3 lg:table-cell">
+                    {d.subgroup ? (
+                      <span className="rounded-full bg-teal-50 px-2 py-0.5 text-xs text-teal-600 dark:bg-teal-900/30 dark:text-teal-300">
+                        {d.subgroup}
+                      </span>
+                    ) : (
+                      <span className="text-slate-300 dark:text-slate-600">—</span>
+                    )}
+                  </td>
+                )}
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1">
                     <button

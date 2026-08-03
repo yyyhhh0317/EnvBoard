@@ -83,6 +83,8 @@ export interface Dependency {
   latestVersion?: string
   /** 分类 */
   category: DependencyCategory
+  /** 子分组名（如 "Web 框架"、"数据库"），来自注释标题 */
+  subgroup?: string
   /** 是否过期（当前版本与最新版本不一致） */
   isOutdated?: boolean
   /** 是否为脚本（package.json scripts） */
