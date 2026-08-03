@@ -1,0 +1,30 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# TypeScript 增量构建产物
+*.tsbuildinfo
+
+# vite.config.ts 编译产物
+vite.config.d.ts
+vite.config.js
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
