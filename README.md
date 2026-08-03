@@ -34,7 +34,7 @@ EnvBoard 用一个可视化界面解决这些问题。
 ## 功能特性
 
 ### .env 管理
-- 📂 **文件导入** — 支持上传 `.env` / `.env.local` / `.env.production` 等格式，支持拖拽上传与粘贴文本
+- 📂 **文件导入** — 支持上传 `.env` / `package.json` / `requirements.txt` / `pyproject.toml` / lockfile 等格式，支持拖拽上传与粘贴文本
 - 📊 **表格化展示** — Key、Value、注释分列显示，状态标记一目了然
 - 🔍 **搜索过滤** — 按变量名或值实时搜索
 - ✏️ **编辑管理** — 修改变量、添加 / 删除变量、复制单条

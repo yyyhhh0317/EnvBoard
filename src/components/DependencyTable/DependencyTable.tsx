@@ -86,9 +86,9 @@ export function DependencyTable({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/50">
       {/* 工具栏 */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4 dark:border-slate-700">
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200/80 p-4 dark:border-slate-700/80">
         <div className="relative flex-1 min-w-[180px]">
           <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -133,14 +133,17 @@ export function DependencyTable({
       </div>
 
       {versionEnabled && (
-        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-          ⚠ 联网查询会将包名发送到 {registryType === 'npm' ? 'npm registry (registry.npmjs.org)' : 'PyPI (pypi.org)'}，与本地处理模式不同。如需隐私请关闭此选项。
+        <div className="flex items-center gap-2 border-b border-amber-200/80 bg-amber-50/80 px-4 py-2.5 text-xs text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-300">
+          <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          联网查询会将包名发送到 {registryType === 'npm' ? 'npm registry' : 'PyPI'}，与本地处理模式不同。如需隐私请关闭此选项。
         </div>
       )}
 
       {/* 分类标签 */}
       {categories.length > 2 && (
-        <div className="flex flex-wrap gap-2 border-b border-slate-200 px-4 py-2 dark:border-slate-700">
+        <div className="flex flex-wrap gap-2 border-b border-slate-200/80 px-4 py-2.5 dark:border-slate-700/80">
           {categories.map((cat) => (
             <button
               key={cat}
@@ -171,7 +174,7 @@ export function DependencyTable({
       {/* 表格 */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900/50 dark:text-slate-400">
+          <thead className="bg-slate-50/80 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-900/50 dark:text-slate-400">
             <tr>
               <th className="min-w-[160px] px-4 py-3">名称</th>
               <th className="px-4 py-3">版本约束</th>
@@ -273,7 +276,7 @@ export function DependencyTable({
         </table>
       </div>
 
-      <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+      <div className="border-t border-slate-200/80 px-4 py-3 text-xs text-slate-500 dark:border-slate-700/80 dark:text-slate-400">
         共 {deps.length} 项 · 显示 {filtered.length} 项
         {outdatedCount > 0 && <span className="text-amber-600 dark:text-amber-400"> · {outdatedCount} 个过期</span>}
       </div>

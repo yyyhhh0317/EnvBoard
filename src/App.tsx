@@ -149,22 +149,25 @@ export default function App() {
         }
       />
 
-      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
         {!hasData ? (
           <div className="space-y-6">
-            <section className="rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-8 text-center text-white shadow-lg">
-              <h2 className="text-2xl font-bold sm:text-3xl">
-                安全管理你的环境配置
-              </h2>
-              <p className="mx-auto mt-2 max-w-2xl text-sm text-emerald-50 sm:text-base">
-                上传 .env / package.json / requirements.txt / pyproject.toml / lockfile，即可查看、编辑、对比和导出。敏感变量自动脱敏，所有操作在浏览器本地完成，数据不会上传。
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
-                {['.env 解析', '依赖管理', '敏感脱敏', '版本查询', '对比同步', '多格式导出', '暗色模式'].map((t) => (
-                  <span key={t} className="rounded-full bg-white/20 px-3 py-1 backdrop-blur">
-                    {t}
-                  </span>
-                ))}
+            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 p-10 text-center text-white shadow-xl shadow-emerald-500/20">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
+              <div className="relative">
+                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  环境配置，一目了然
+                </h2>
+                <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-emerald-50/90 sm:text-base">
+                  上传 <code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">.env</code>、<code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">package.json</code>、<code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">requirements.txt</code> 等配置文件，即可查看、编辑、对比与导出。敏感变量自动脱敏，数据仅在浏览器本地处理。
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs">
+                  {['.env 解析', '依赖管理', '敏感脱敏', '版本查询', '对比同步', '多格式导出', '暗色模式'].map((t) => (
+                    <span key={t} className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5 font-medium backdrop-blur-sm transition hover:bg-white/20">
+                      {t}
+                    </span>
+                  ))}
+                </div>
               </div>
             </section>
             <EnvImport onImport={handleImport} />
@@ -238,8 +241,9 @@ export default function App() {
       <EnvEditor variable={editingEnv} onSave={handleSaveEnv} onClose={() => setEditingEnv(null)} />
       <DependencyEditor dependency={editingDep} onSave={handleSaveDep} onClose={() => setEditingDep(null)} />
 
-      <footer className="border-t border-slate-200 py-4 text-center text-xs text-slate-400 dark:border-slate-800">
-        EnvBoard · 环境配置可视化管理 · 数据仅在浏览器本地处理（联网查版本除外，需手动开启）
+      <footer className="border-t border-slate-200/80 py-6 text-center text-xs text-slate-400 dark:border-slate-800/80">
+        <p>EnvBoard · 环境配置可视化管理 · 数据仅在浏览器本地处理</p>
+        <p className="mt-1 text-slate-300 dark:text-slate-600">联网查版本为可选功能，需手动开启</p>
       </footer>
     </div>
   )

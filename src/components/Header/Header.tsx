@@ -10,30 +10,35 @@ interface HeaderProps {
 
 export function Header({ theme, onToggleTheme, filename, variableCount }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-700 dark:bg-slate-900/80">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/70 backdrop-blur-lg dark:border-slate-800/80 dark:bg-slate-950/70">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-3">
-          <img src="/env.svg" alt="EnvBoard" className="h-9 w-9" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-sm shadow-emerald-500/20">
+            <img src="/env.svg" alt="EnvBoard" className="h-6 w-6" />
+          </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">
+            <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
               EnvBoard
             </h1>
             <p className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
-              环境变量可视化管理工具
+              环境配置可视化管理工具
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {filename && (
-            <div className="hidden items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 sm:flex">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              {filename} · {variableCount} 个变量
+            <div className="hidden items-center gap-2 rounded-full border border-emerald-200/60 bg-emerald-50/80 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300 sm:flex">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              {filename} · {variableCount} 项
             </div>
           )}
           <button
             onClick={onToggleTheme}
-            className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
             title={theme === 'light' ? '切换到暗色模式' : '切换到浅色模式'}
             aria-label="切换主题"
           >

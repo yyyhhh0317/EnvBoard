@@ -1,9 +1,9 @@
 {
   "name": "envboard",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
-  "description": "一个轻量级环境变量可视化管理工具，支持多种环境配置格式",
+  "description": "一个轻量级环境配置可视化管理工具，支持 .env / package.json / requirements.txt / pyproject.toml / lockfile 等多种格式",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

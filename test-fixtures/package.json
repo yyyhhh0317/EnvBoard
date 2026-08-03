@@ -1,0 +1,43 @@
+{
+  "name": "envboard-test-app",
+  "version": "1.2.3",
+  "description": "用于验证 EnvBoard 解析功能的测试项目",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0",
+    "axios": "^1.7.5",
+    "lodash": "^4.17.21",
+    "dayjs": "^1.11.13",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.0.5",
+    "eslint": "^9.10.0",
+    "prettier": "^3.3.3"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.3"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=9"
+  }
+}
