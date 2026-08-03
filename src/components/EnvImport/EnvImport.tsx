@@ -41,7 +41,7 @@ export function EnvImport({ onImport }: EnvImportProps) {
 
   const handleSubmitPaste = () => {
     if (pasteValue.trim()) {
-      onImport(pasteValue, 'pasted.env')
+      onImport(pasteValue, 'pasted.txt')
       setPasteValue('')
       setPasteOpen(false)
     }
