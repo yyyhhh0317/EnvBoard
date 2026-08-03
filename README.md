@@ -75,8 +75,8 @@ EnvBoard 用一个可视化界面解决这些问题。
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/yyyhhh0317/envboard.git
-cd envboard
+git clone https://github.com/yyyhhh0317/EnvBoard.git
+cd EnvBoard
 
 # 2. 安装依赖
 npm install
@@ -172,7 +172,7 @@ npm run build
 - [ ] v0.3.0 — 环境变量变更历史
 - [ ] v1.0.0 — 完善文档与稳定发布
 
-欢迎在 [Issues](https://github.com/yyyhhh0317/envboard/issues) 提交需求或反馈。
+欢迎在 [Issues](https://github.com/yyyhhh0317/EnvBoard/issues) 提交需求或反馈。
 
 ## 贡献指南
 
