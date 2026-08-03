@@ -27,8 +27,7 @@ EnvBoard 用一个可视化界面解决这些问题。
 
 ## 在线 Demo
 
-<!-- 部署后在此填写在线 Demo 地址，例如： -->
-<!-- 🔗 https://envboard.vercel.app -->
+🔗 https://yyyhhh0317.github.io/EnvBoard/
 
 部署方式见 [部署](#部署) 章节。
 
@@ -140,24 +139,23 @@ src/
 
 ## 部署
 
-推荐部署到 [Vercel](https://vercel.com/)，也可使用 GitHub Pages 或 Netlify。
+本项目通过 GitHub Actions 自动部署到 GitHub Pages，推送 `main` 分支即自动构建上线。
 
-### Vercel
+### 自动部署（已配置）
 
-1. Fork 本仓库到你的 GitHub
-2. 在 Vercel 导入该仓库
-3. Framework Preset 选择 **Vite**
-4. Build Command 为 `npm run build`，Output Directory 为 `dist`
-5. 点击 Deploy
+仓库已包含 [.github/workflows/deploy.yml](./.github/workflows/deploy.yml)，推送到 `main` 后会自动触发构建并部署。首次使用需在仓库开启 Pages：
 
-### GitHub Pages
+1. 进入仓库 **Settings → Pages**
+2. **Build and deployment → Source** 选择 **GitHub Actions**
+3. 之后每次推送 `main` 都会自动部署
 
-```bash
-npm run build
-# 将 dist/ 目录内容发布到 gh-pages 分支
-```
+部署地址：https://yyyhhh0317.github.io/EnvBoard/
 
-> 部署成功后，记得把在线 Demo 地址更新到本 README 顶部的「在线 Demo」章节。
+> 注意：`vite.config.ts` 中已设置 `base: '/EnvBoard/'`，以适配 GitHub Pages 的子路径。若部署到自定义域名或根路径，请相应修改 `base`。
+
+### 其他平台
+
+也可部署到 Vercel、Netlify 等静态托管平台，构建命令为 `npm run build`，输出目录为 `dist`（部署到非子路径时需移除 `vite.config.ts` 中的 `base` 配置）。
 
 ## 开发计划
 
