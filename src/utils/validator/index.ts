@@ -149,11 +149,19 @@ function validateVariable(
       url: '合法 URL（http(s)://）',
       email: '邮箱地址',
     }
+    // 映射到 ValidationRule（email 复用 invalid-url，因类型定义中无 invalid-email）
+    const ruleMap: Record<VariableType, ValidationRule> = {
+      string: 'invalid-url',
+      number: 'invalid-number',
+      boolean: 'invalid-boolean',
+      url: 'invalid-url',
+      email: 'invalid-url',
+    }
     issues.push({
       variableId: v.id,
       key: v.key,
       severity: 'warning',
-      rule: `invalid-${tpl.expectedType === 'number' ? 'number' : tpl.expectedType === 'url' ? 'url' : tpl.expectedType === 'boolean' ? 'boolean' : 'url'}` as ValidationRule,
+      rule: ruleMap[tpl.expectedType],
       message: `期望${typeLabel[tpl.expectedType]}，当前值不匹配`,
     })
   }

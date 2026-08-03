@@ -181,9 +181,11 @@ export default function App() {
       setMultiEnv((prev) => {
         if (!prev || !activeEnv) return prev
         const envVars = prev.envs[activeEnv] ?? []
-        const newVars = envVars.map((v) =>
-          v.id === updated.id ? { ...updated, isNew: false } : v,
-        )
+        // upsert：存在则更新，不存在则追加（处理新增变量场景）
+        const exists = envVars.some((v) => v.id === updated.id)
+        const newVars = exists
+          ? envVars.map((v) => (v.id === updated.id ? { ...updated, isNew: false } : v))
+          : [...envVars, { ...updated, isNew: false }]
         return {
           ...prev,
           envs: { ...prev.envs, [activeEnv]: newVars },
@@ -251,17 +253,20 @@ export default function App() {
   const handleRemoveCustomEnv = useCallback(
     (envName: EnvName) => {
       if (!multiEnv) return
+      let nextActive = activeEnv
       setMultiEnv((prev) => {
         if (!prev) return prev
         const newOrder = prev.envOrder.filter((e) => e !== envName)
         const newEnvs = { ...prev.envs }
         delete newEnvs[envName]
+        // 删除的是当前激活环境时，切到剩余的第一个
+        if (activeEnv === envName) {
+          nextActive = newOrder[0] ?? null
+        }
         return { ...prev, envOrder: newOrder, envs: newEnvs }
       })
       setCustomEnvs((prev) => prev.filter((e) => e !== envName))
-      if (activeEnv === envName) {
-        setActiveEnv(multiEnv.envOrder[0] ?? null)
-      }
+      setActiveEnv(nextActive)
     },
     [multiEnv, activeEnv],
   )

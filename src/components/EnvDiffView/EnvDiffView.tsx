@@ -12,6 +12,20 @@ interface EnvDiffViewProps {
 
 type FilterStatus = 'all' | 'different' | 'partial-missing' | 'same'
 
+/** 颜色 -> 圆点类名（静态映射，避免 tailwind purge） */
+const DOT_COLOR: Record<string, string> = {
+  emerald: 'bg-emerald-500',
+  amber: 'bg-amber-500',
+  purple: 'bg-purple-500',
+  rose: 'bg-rose-500',
+  cyan: 'bg-cyan-500',
+  blue: 'bg-blue-500',
+  teal: 'bg-teal-500',
+  indigo: 'bg-indigo-500',
+  pink: 'bg-pink-500',
+  orange: 'bg-orange-500',
+}
+
 export function EnvDiffView({ envs, envOrder }: EnvDiffViewProps) {
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [search, setSearch] = useState('')
@@ -108,7 +122,7 @@ export function EnvDiffView({ envs, envOrder }: EnvDiffViewProps) {
                 return (
                   <th key={envName} className="min-w-[120px] px-4 py-3">
                     <span className="inline-flex items-center gap-1.5">
-                      <span className={`h-1.5 w-1.5 rounded-full bg-${meta.color}-500`} />
+                      <span className={`h-1.5 w-1.5 rounded-full ${DOT_COLOR[meta.color] ?? 'bg-slate-500'}`} />
                       {meta.label}
                     </span>
                   </th>

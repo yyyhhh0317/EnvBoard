@@ -6,9 +6,9 @@ function serializeEnv(vars: EnvVariable[]): string {
   const lines: string[] = []
   for (const v of vars) {
     if (v.error) continue
-    const value = v.value.includes(' ') || v.value.includes('#')
-      ? `"${v.value}"`
-      : v.value
+    // 仅当值含空格或「空格+#」（会被解析为内联注释）时才加引号
+    const needQuote = v.value.includes(' ') || /\s+#/.test(v.value)
+    const value = needQuote ? `"${v.value}"` : v.value
     const line = v.isDisabled ? `# ${v.key}=${value}` : `${v.key}=${value}`
     if (v.comment && !v.isDisabled) {
       lines.push(`# ${v.comment}`)

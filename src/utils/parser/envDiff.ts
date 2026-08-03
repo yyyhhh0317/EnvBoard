@@ -38,7 +38,8 @@ export function diffEnvs(
       if (v) {
         values[envName] = v.value
         presentIn.push(envName)
-        if (v.value) valueSet.add(v.value)
+        // 始终加入 valueSet（含空字符串），否则空值与非空值会被误判为一致
+        valueSet.add(v.value)
       } else {
         values[envName] = undefined
         missingIn.push(envName)
