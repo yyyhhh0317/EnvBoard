@@ -180,3 +180,53 @@ export type ValidationRule =
   | 'naming-space'       // 命名含空格
   | 'duplicate-key'      // 重复 key
   | 'sensitive-empty'    // 敏感值为空
+
+// ===== 多环境管理（v0.3.0）=====
+
+/** 预设环境名 */
+export type PresetEnv = 'development' | 'test' | 'staging' | 'production'
+
+/** 环境标识（预设或自定义） */
+export type EnvName = string
+
+/** 环境元信息 */
+export interface EnvMeta {
+  /** 环境名（如 development / production / custom） */
+  name: EnvName
+  /** 显示标签（如「开发」「生产」） */
+  label: string
+  /** 主题色（tailwind 颜色名片段，如 emerald / amber） */
+  color: string
+  /** 来源文件名（多文件模式有值） */
+  filename?: string
+  /** 是否为预设环境 */
+  isPreset: boolean
+}
+
+/** 单文件多环境解析结果 */
+export interface MultiEnvParseResult {
+  /** 按出现顺序的环境名列表 */
+  envOrder: EnvName[]
+  /** 每个环境的变量列表 */
+  envs: Record<EnvName, EnvVariable[]>
+  /** 解析错误/警告 */
+  errors: string[]
+  /** 源文件名 */
+  filename: string
+  /** 是否检测到环境分段标记 */
+  hasSegments: boolean
+}
+
+/** 环境对比项 */
+export interface EnvDiffItem {
+  /** 变量名 */
+  key: string
+  /** 各环境的值（环境名 -> 值，缺失则无该字段） */
+  values: Record<EnvName, string | undefined>
+  /** 对比状态 */
+  status: 'same' | 'different' | 'partial-missing'
+  /** 该 key 存在于哪些环境 */
+  presentIn: EnvName[]
+  /** 缺失于哪些环境 */
+  missingIn: EnvName[]
+}

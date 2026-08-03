@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Header } from './components/Header/Header'
 import { EnvImport } from './components/EnvImport/EnvImport'
 import { EnvTable } from './components/EnvTable/EnvTable'
@@ -9,6 +9,9 @@ import { DependencyTable } from './components/DependencyTable/DependencyTable'
 import { DependencyEditor } from './components/DependencyEditor/DependencyEditor'
 import { DependencyExport } from './components/DependencyExport/DependencyExport'
 import { TemplatePicker } from './components/TemplatePicker/TemplatePicker'
+import { EnvSwitcher } from './components/EnvSwitcher/EnvSwitcher'
+import { EnvDiffView } from './components/EnvDiffView/EnvDiffView'
+import { MultiEnvExport } from './components/MultiEnvExport/MultiEnvExport'
 import { useTheme } from './hooks/useTheme'
 import { createEmptyVariable, parseEnvFile } from './utils/parser/envParser'
 import { parsePackageJson } from './utils/parser/packageJsonParser'
@@ -16,12 +19,15 @@ import { parseRequirements } from './utils/parser/requirementsParser'
 import { parsePyproject } from './utils/parser/pyprojectParser'
 import { parseLockfile } from './utils/parser/lockfileParser'
 import { detectProjectType } from './utils/parser/detector'
+import { mergeMultiEnvResults, parseMultiEnvFile } from './utils/parser/multiEnvParser'
 import { validateVariables } from './utils/validator'
 import type {
   CompareItem,
   Dependency,
   DependencyParseResult,
+  EnvName,
   EnvVariable,
+  MultiEnvParseResult,
   ProjectType,
   TemplateVariable,
 } from './types'
@@ -48,6 +54,12 @@ export default function App() {
   const [depResult, setDepResult] = useState<DependencyParseResult | null>(null)
   const [editingDep, setEditingDep] = useState<Dependency | null>(null)
 
+  // 多环境模式状态（v0.3.0）
+  const [multiEnv, setMultiEnv] = useState<MultiEnvParseResult | null>(null)
+  const [activeEnv, setActiveEnv] = useState<EnvName | null>(null)
+  const [customEnvs, setCustomEnvs] = useState<EnvName[]>([])
+  const appendInputRef = useRef<HTMLInputElement>(null)
+
   // 派生校验结果
   const issues = useMemo(
     () => validateVariables(variables, templateVars),
@@ -61,6 +73,34 @@ export default function App() {
 
   const isEnvMode = projectType === 'env'
   const isDepMode = projectType !== null && projectType !== 'env'
+  // 多环境模式：已有多环境数据，或单文件含 @env 分段
+  const isMultiEnvMode = multiEnv !== null && multiEnv.hasSegments
+
+  // 当前激活环境的变量列表（多环境模式下使用）
+  const activeEnvVars = useMemo(() => {
+    if (!multiEnv || !activeEnv) return []
+    return multiEnv.envs[activeEnv] ?? []
+  }, [multiEnv, activeEnv])
+
+  // 多环境模式下，当前环境的变量同步到 variables（复用 EnvTable/校验逻辑）
+  const displayVariables = isMultiEnvMode ? activeEnvVars : variables
+
+  // 多环境模式下重新派生校验
+  const displayIssues = useMemo(() => {
+    if (!isMultiEnvMode) return issues
+    return validateVariables(activeEnvVars, templateVars)
+  }, [isMultiEnvMode, activeEnvVars, templateVars, issues])
+
+  // 环境变量计数（用于 EnvSwitcher）
+  const envCounts = useMemo(() => {
+    const counts: Record<EnvName, number> = {}
+    if (multiEnv) {
+      for (const envName of multiEnv.envOrder) {
+        counts[envName] = (multiEnv.envs[envName] ?? []).filter((v) => !v.isDisabled).length
+      }
+    }
+    return counts
+  }, [multiEnv])
 
   const handleImport = useCallback((content: string, name: string) => {
     const type = detectProjectType(name, content)
@@ -68,9 +108,23 @@ export default function App() {
     setFilename(name)
 
     if (type === 'env') {
+      // 先检测是否含 @env 分段标记
+      const multiResult = parseMultiEnvFile(content, name)
+      if (multiResult.hasSegments) {
+        // 单文件多环境
+        setMultiEnv(multiResult)
+        setActiveEnv(multiResult.envOrder[0] ?? null)
+        setVariables([])
+        setErrors(multiResult.errors)
+        setDepResult(null)
+        return
+      }
+      // 无分段：按普通单环境 .env 处理
       const result = parseEnvFile(content, name)
       setVariables(result.variables)
       setErrors(result.errors)
+      setMultiEnv(null)
+      setActiveEnv(null)
       setDepResult(null)
     } else {
       let result: DependencyParseResult
@@ -81,8 +135,136 @@ export default function App() {
       setDepResult(result)
       setErrors(result.errors)
       setVariables([])
+      setMultiEnv(null)
+      setActiveEnv(null)
     }
   }, [])
+
+  // 追加环境文件（多文件导入场景）
+  const handleAppendFiles = useCallback((files: FileList) => {
+    const readers = Array.from(files).map(
+      (file) =>
+        new Promise<{ content: string; filename: string }>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            resolve({ content: String(e.target?.result ?? ''), filename: file.name })
+          }
+          reader.readAsText(file, 'utf-8')
+        }),
+    )
+    Promise.all(readers).then((items) => {
+      // 合并已有环境 + 新文件
+      const allItems = [...items]
+      // 把现有 multiEnv 的各环境重新作为输入
+      if (multiEnv) {
+        for (const envName of multiEnv.envOrder) {
+          const vars = multiEnv.envs[envName] ?? []
+          // 重建该环境的文本（简单序列化）
+          const text = vars
+            .map((v) => (v.isDisabled ? `# ${v.key}=${v.value}` : `${v.key}=${v.value}`))
+            .join('\n')
+          allItems.unshift({ content: text, filename: `.env.${envName}` })
+        }
+      }
+      const merged = mergeMultiEnvResults(allItems)
+      setMultiEnv(merged)
+      setActiveEnv(merged.envOrder[0] ?? null)
+      setErrors(merged.errors)
+      setProjectType('env')
+    })
+  }, [multiEnv])
+
+  // 多环境模式下编辑当前环境的变量
+  const handleSaveMultiEnvVar = useCallback(
+    (updated: EnvVariable) => {
+      if (!multiEnv || !activeEnv) return
+      setMultiEnv((prev) => {
+        if (!prev || !activeEnv) return prev
+        const envVars = prev.envs[activeEnv] ?? []
+        const newVars = envVars.map((v) =>
+          v.id === updated.id ? { ...updated, isNew: false } : v,
+        )
+        return {
+          ...prev,
+          envs: { ...prev.envs, [activeEnv]: newVars },
+        }
+      })
+      setEditingEnv(null)
+    },
+    [multiEnv, activeEnv],
+  )
+
+  const handleDeleteMultiEnvVar = useCallback(
+    (id: string) => {
+      if (!multiEnv || !activeEnv) return
+      setMultiEnv((prev) => {
+        if (!prev || !activeEnv) return prev
+        const envVars = prev.envs[activeEnv] ?? []
+        return {
+          ...prev,
+          envs: {
+            ...prev.envs,
+            [activeEnv]: envVars.filter((v) => v.id !== id),
+          },
+        }
+      })
+    },
+    [multiEnv, activeEnv],
+  )
+
+  const handleToggleMultiEnvSensitive = useCallback(
+    (id: string) => {
+      if (!multiEnv || !activeEnv) return
+      setMultiEnv((prev) => {
+        if (!prev || !activeEnv) return prev
+        const envVars = prev.envs[activeEnv] ?? []
+        return {
+          ...prev,
+          envs: {
+            ...prev.envs,
+            [activeEnv]: envVars.map((v) =>
+              v.id === id ? { ...v, isSensitive: !v.isSensitive, isModified: true } : v,
+            ),
+          },
+        }
+      })
+    },
+    [multiEnv, activeEnv],
+  )
+
+  // 新增自定义环境
+  const handleAddCustomEnv = useCallback((envName: EnvName) => {
+    setMultiEnv((prev) => {
+      if (!prev) return prev
+      if (prev.envOrder.includes(envName)) return prev
+      return {
+        ...prev,
+        envOrder: [...prev.envOrder, envName],
+        envs: { ...prev.envs, [envName]: [] },
+      }
+    })
+    setCustomEnvs((prev) => [...prev, envName])
+    setActiveEnv(envName)
+  }, [])
+
+  // 删除自定义环境
+  const handleRemoveCustomEnv = useCallback(
+    (envName: EnvName) => {
+      if (!multiEnv) return
+      setMultiEnv((prev) => {
+        if (!prev) return prev
+        const newOrder = prev.envOrder.filter((e) => e !== envName)
+        const newEnvs = { ...prev.envs }
+        delete newEnvs[envName]
+        return { ...prev, envOrder: newOrder, envs: newEnvs }
+      })
+      setCustomEnvs((prev) => prev.filter((e) => e !== envName))
+      if (activeEnv === envName) {
+        setActiveEnv(multiEnv.envOrder[0] ?? null)
+      }
+    },
+    [multiEnv, activeEnv],
+  )
 
   // ===== .env 模式操作 =====
   const handleSaveEnv = useCallback((updated: EnvVariable) => {
@@ -149,6 +331,9 @@ export default function App() {
     setFilename(null)
     setErrors([])
     setTemplateVars([])
+    setMultiEnv(null)
+    setActiveEnv(null)
+    setCustomEnvs([])
   }, [])
 
   // 应用模板：合并变量并更新模板变量（用于后续校验）
@@ -165,6 +350,32 @@ export default function App() {
     [],
   )
 
+  // 多环境模式下应用模板：合并到当前激活环境
+  const handleApplyTemplateToMultiEnv = useCallback(
+    (newVars: EnvVariable[], tplVars: TemplateVariable[]) => {
+      if (!multiEnv || !activeEnv) return
+      setMultiEnv((prev) => {
+        if (!prev || !activeEnv) return prev
+        const existing = prev.envs[activeEnv] ?? []
+        const existingKeys = new Set(existing.map((v) => v.key))
+        const toAdd = newVars.filter((v) => !existingKeys.has(v.key))
+        return {
+          ...prev,
+          envs: {
+            ...prev.envs,
+            [activeEnv]: [...existing, ...toAdd],
+          },
+        }
+      })
+      setTemplateVars((prev) => {
+        const map = new Map(prev.map((t) => [t.key, t]))
+        for (const t of tplVars) map.set(t.key, t)
+        return Array.from(map.values())
+      })
+    },
+    [multiEnv, activeEnv],
+  )
+
   const hasData = projectType !== null
 
   return (
@@ -175,7 +386,7 @@ export default function App() {
         filename={filename}
         variableCount={
           isEnvMode
-            ? variables.filter((v) => !v.isDisabled).length
+            ? displayVariables.filter((v) => !v.isDisabled).length
             : depResult?.dependencies.length ?? 0
         }
       />
@@ -193,7 +404,7 @@ export default function App() {
                   上传 <code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">.env</code>、<code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">package.json</code>、<code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">requirements.txt</code> 等配置文件，即可查看、编辑、对比与导出。敏感变量自动脱敏，数据仅在浏览器本地处理。
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs">
-                  {['.env 解析', '依赖管理', '配置模板', '变量校验', '敏感脱敏', '对比同步', '多格式导出', '暗色模式'].map((t) => (
+                  {['.env 解析', '依赖管理', '配置模板', '变量校验', '多环境切换', '敏感脱敏', '多格式导出', '暗色模式'].map((t) => (
                     <span key={t} className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5 font-medium backdrop-blur-sm transition hover:bg-white/20">
                       {t}
                     </span>
@@ -223,7 +434,64 @@ export default function App() {
               </div>
             )}
 
-            {isEnvMode && (
+            {isEnvMode && isMultiEnvMode && multiEnv && (
+              <>
+                {/* 多环境切换器 + 追加文件按钮 */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex-1 min-w-[280px]">
+                    <EnvSwitcher
+                      envOrder={multiEnv.envOrder}
+                      activeEnv={activeEnv}
+                      envCounts={envCounts}
+                      customEnvs={customEnvs}
+                      onSelect={setActiveEnv}
+                      onAddCustom={handleAddCustomEnv}
+                      onRemoveCustom={handleRemoveCustomEnv}
+                    />
+                  </div>
+                  <button
+                    onClick={() => appendInputRef.current?.click()}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                    title="追加 .env.xxx 环境文件"
+                  >
+                    + 追加环境文件
+                  </button>
+                  <input
+                    ref={appendInputRef}
+                    type="file"
+                    multiple
+                    accept=".env,.env.*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleAppendFiles(e.target.files)
+                        e.target.value = ''
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* 当前环境的变量表格 */}
+                <EnvTable
+                  variables={displayVariables}
+                  issues={displayIssues}
+                  hasTemplate={templateVars.length > 0}
+                  onEdit={setEditingEnv}
+                  onAdd={() => setEditingEnv(createEmptyVariable())}
+                  onDelete={handleDeleteMultiEnvVar}
+                  onToggleSensitive={handleToggleMultiEnvSensitive}
+                  onOpenTemplate={() => setTemplatePickerOpen(true)}
+                />
+
+                {/* 环境对比 + 多环境导出 */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <EnvDiffView envs={multiEnv.envs} envOrder={multiEnv.envOrder} />
+                  <MultiEnvExport envs={multiEnv.envs} envOrder={multiEnv.envOrder} />
+                </div>
+              </>
+            )}
+
+            {isEnvMode && !isMultiEnvMode && (
               <>
                 <EnvTable
                   variables={variables}
@@ -272,13 +540,17 @@ export default function App() {
         )}
       </main>
 
-      <EnvEditor variable={editingEnv} onSave={handleSaveEnv} onClose={() => setEditingEnv(null)} />
+      <EnvEditor
+        variable={editingEnv}
+        onSave={isMultiEnvMode ? handleSaveMultiEnvVar : handleSaveEnv}
+        onClose={() => setEditingEnv(null)}
+      />
       <DependencyEditor dependency={editingDep} onSave={handleSaveDep} onClose={() => setEditingDep(null)} />
       <TemplatePicker
         open={templatePickerOpen}
-        variables={variables}
+        variables={displayVariables}
         genId={genEnvId}
-        onApply={handleApplyTemplate}
+        onApply={isMultiEnvMode ? handleApplyTemplateToMultiEnv : handleApplyTemplate}
         onClose={() => setTemplatePickerOpen(false)}
       />
 
