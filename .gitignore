@@ -6,6 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# 依赖 & 构建产物
 node_modules
 dist
 dist-ssr
@@ -18,7 +19,14 @@ dist-ssr
 vite.config.d.ts
 vite.config.js
 
-# Editor directories and files
+# 配置文件（防止真实密钥被提交到公开仓库）
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.schema
+
+# 编辑器 & 系统
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -28,3 +36,12 @@ vite.config.js
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+.venv
+__pycache__/
+*.pyc
+
+# 临时文件
+*.tmp
+*.bak
