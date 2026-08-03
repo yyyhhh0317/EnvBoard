@@ -4,7 +4,7 @@
 
 # EnvBoard
 
-一个轻量级环境变量可视化管理工具，支持多种环境配置格式，帮助开发者安全管理项目配置。
+一个轻量级环境配置可视化管理工具，支持 `.env`、`package.json`、`requirements.txt`、`pyproject.toml`、lockfile 等多种格式，帮助开发者安全管理项目配置。
 
 [在线 Demo](#在线-demo) · [功能特性](#功能特性) · [快速开始](#快速开始) · [贡献指南](#贡献指南)
 
@@ -14,7 +14,7 @@
 
 ## 项目简介
 
-`EnvBoard` 是一个纯前端的环境变量可视化管理工具。上传 `.env` 文件即可查看、编辑、对比和导出环境变量，敏感变量自动识别并脱敏。所有操作在浏览器本地完成，**数据不会上传到任何服务器**，适合处理包含密钥、令牌等敏感信息的项目配置。
+`EnvBoard` 是一个纯前端的环境配置可视化管理工具。上传 `.env` / `package.json` / `requirements.txt` / `pyproject.toml` / lockfile 等配置文件，即可查看、编辑、对比和导出。`.env` 的敏感变量自动识别并脱敏，依赖列表可一键查询最新版本。所有解析与编辑在浏览器本地完成，**数据不会上传到任何服务器**（版本查询为可选联网功能，需手动开启），适合处理包含密钥、令牌等敏感信息的项目配置。
 
 ### 为什么需要它
 
@@ -33,6 +33,7 @@ EnvBoard 用一个可视化界面解决这些问题。
 
 ## 功能特性
 
+### .env 管理
 - 📂 **文件导入** — 支持上传 `.env` / `.env.local` / `.env.production` 等格式，支持拖拽上传与粘贴文本
 - 📊 **表格化展示** — Key、Value、注释分列显示，状态标记一目了然
 - 🔍 **搜索过滤** — 按变量名或值实时搜索
@@ -40,9 +41,19 @@ EnvBoard 用一个可视化界面解决这些问题。
 - 🔒 **敏感值脱敏** — 自动识别 `PASSWORD` / `SECRET` / `TOKEN` / `KEY` 等敏感变量，默认隐藏为 `****`，支持单条或全部显隐
 - 🔄 **对比同步** — 上传 `.env.example` 对比缺失 / 多余 / 空值变量，一键同步缺失项
 - 📤 **多格式导出** — 支持 `.env` / `.env.example`（模板）/ `JSON` / `YAML`，可选是否包含敏感值
+
+### 依赖管理（v0.2.0 新增）
+- 📦 **多格式解析** — 支持 `package.json` / `requirements.txt` / `pyproject.toml`（PEP 621 + Poetry）/ `yarn.lock` / `pnpm-lock.yaml` / `package-lock.json`
+- 🗂 **分类展示** — 按生产依赖 / 开发依赖 / 同级依赖 / 脚本 / 运行环境等分类，支持分类过滤
+- 🔍 **搜索过滤** — 按包名或版本实时搜索
+- ✏️ **编辑管理** — 修改依赖版本、添加 / 删除依赖、复制包名@版本
+- 🔄 **版本查询**（可选）— 联网查询 npm / PyPI 最新版本，标记过期依赖。默认关闭，开启时明确提示会将包名发送到对应 registry
+- 📤 **格式化导出** — 按原始格式导出修改后的配置文件
+
+### 通用
 - 🌓 **暗色模式** — 跟随系统偏好，可手动切换并记忆
-- ⚠️ **错误处理** — 空文件、无效格式、重复 Key 等友好提示
-- 🛡️ **本地运行** — 纯前端实现，数据不出浏览器
+- ⚠️ **错误处理** — 空文件、无效格式、重复声明等友好提示
+- 🛡️ **本地运行** — 纯前端实现，数据不出浏览器（版本查询为可选联网功能）
 
 ## 项目截图
 
@@ -104,6 +115,8 @@ npm run preview    # 本地预览构建产物
 
 ### 支持的解析格式
 
+**.env**
+
 ```bash
 # 注释行
 KEY=VALUE
@@ -114,26 +127,38 @@ KEY=value  # 行内注释
 # DISABLED_KEY=value   # 被注释掉的变量
 ```
 
+**package.json** — 解析 `dependencies` / `devDependencies` / `peerDependencies` / `optionalDependencies` / `scripts` / `engines`
+
+**requirements.txt** — 支持 `==` / `>=` / `<=` / `~=` / `>` / `<` 版本约束、注释、`-r` / `-e` 选项、VCS/URL 来源
+
+**pyproject.toml** — 支持 PEP 621 `[project]` 标准格式与 Poetry `[tool.poetry]` 格式，包含 `[build-system]`
+
+**lockfile** — 支持 `yarn.lock`（v1）/ `pnpm-lock.yaml`（v6+）/ `package-lock.json`（v3），提取锁定版本
+
 ## 项目结构
 
 ```
 src/
 ├── components/
-│   ├── Header/        # 顶部导航栏
-│   ├── EnvImport/     # 导入区域
-│   ├── EnvTable/      # 变量表格
-│   ├── EnvEditor/     # 编辑弹窗
-│   ├── EnvCompare/    # 对比区域
-│   └── EnvExport/     # 导出区域
+│   ├── Header/          # 顶部导航栏
+│   ├── EnvImport/       # 导入区域（支持多种格式）
+│   ├── EnvTable/        # .env 变量表格
+│   ├── EnvEditor/       # .env 变量编辑弹窗
+│   ├── EnvCompare/      # .env 对比区域
+│   ├── EnvExport/       # .env 导出区域
+│   ├── DependencyTable/ # 依赖列表表格
+│   ├── DependencyEditor/# 依赖编辑弹窗
+│   └── DependencyExport/# 依赖导出区域
 ├── hooks/
-│   └── useTheme.ts    # 暗色模式
+│   └── useTheme.ts      # 暗色模式
 ├── utils/
-│   ├── parser/        # .env 解析与对比
-│   ├── formatter/     # 多格式导出
-│   ├── sensitive.ts   # 敏感值识别
-│   └── sample.ts      # 示例数据
-├── types/             # TypeScript 类型定义
-├── App.tsx
+│   ├── parser/          # 解析器：.env / package.json / requirements / pyproject / lockfile / TOML / 文件检测
+│   ├── formatter/       # 导出格式化：.env / JSON / YAML / 依赖
+│   ├── registry/        # npm / PyPI 版本查询（opt-in）
+│   ├── sensitive.ts     # 敏感值识别
+│   └── sample.ts        # 示例数据
+├── types/               # TypeScript 类型定义
+├── App.tsx              # 根据文件类型路由到 .env / 依赖视图
 └── main.tsx
 ```
 
@@ -163,11 +188,14 @@ src/
 - [x] v0.1.0 — 对比功能 + 敏感值识别
 - [x] v0.1.0 — 多格式导出（JSON、YAML）
 - [x] v0.1.0 — 暗色模式 + 错误处理
-- [ ] v0.2.0 — 多环境管理（dev / test / staging / prod）
-- [ ] v0.2.0 — JSON / YAML / TOML 文件解析
-- [ ] v0.2.0 — 配置模板与变量校验
-- [ ] v0.3.0 — 本地加密存储敏感变量
-- [ ] v0.3.0 — 环境变量变更历史
+- [x] v0.2.0 — `package.json` / `requirements.txt` / `pyproject.toml` / lockfile 解析展示
+- [x] v0.2.0 — 依赖分类过滤、编辑、导出
+- [x] v0.2.0 — npm / PyPI 最新版本查询（opt-in）
+- [ ] v0.3.0 — 多环境管理（dev / test / staging / prod）
+- [ ] v0.3.0 — 本地 CLI 执行安装/卸载命令（Phase 2）
+- [ ] v0.3.0 — 配置模板与变量校验
+- [ ] v0.4.0 — 本地加密存储敏感变量
+- [ ] v0.4.0 — 变更历史
 - [ ] v1.0.0 — 完善文档与稳定发布
 
 欢迎在 [Issues](https://github.com/yyyhhh0317/EnvBoard/issues) 提交需求或反馈。

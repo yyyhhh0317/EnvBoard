@@ -70,12 +70,12 @@ export function EnvImport({ onImport }: EnvImportProps) {
           点击上传、拖拽文件到此或粘贴内容
         </p>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          支持 .env / .env.local / .env.production 等格式
+          支持 .env / package.json / requirements.txt / pyproject.toml / lockfile
         </p>
         <input
           ref={inputRef}
           type="file"
-          accept=".env,.env.*,text/plain"
+          accept=".env,.env.*,text/plain,text/toml,application/json,.json,.txt,.yaml,.yml"
           className="hidden"
           onChange={handleFileChange}
         />
