@@ -31,7 +31,6 @@
 ## 🎬 功能速览
 
 ![EnvBoard Demo](docs/demo.gif)
-> ⏳ Demo GIF 制作中，稍后更新
 
 ---
 

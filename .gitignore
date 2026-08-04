@@ -45,3 +45,6 @@ __pycache__/
 # 临时文件
 *.tmp
 *.bak
+
+# 其他
+docs
