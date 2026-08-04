@@ -14,7 +14,11 @@ export function Header({ theme, onToggleTheme, filename, variableCount }: Header
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-sm shadow-emerald-500/20">
-            <img src="/env.svg" alt="EnvBoard" className="h-6 w-6" />
+            <svg viewBox="0 0 64 64" fill="none" className="h-6 w-6">
+              <rect width="64" height="64" rx="14" fill="#10b981"/>
+              <path d="M18 20h28M18 32h28M18 44h18" stroke="#fff" strokeWidth={4} strokeLinecap="round"/>
+              <circle cx="46" cy="44" r="4" fill="#fff"/>
+            </svg>
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
