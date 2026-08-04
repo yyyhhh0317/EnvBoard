@@ -486,6 +486,12 @@ export default function App() {
                   onDelete={handleDeleteMultiEnvVar}
                   onToggleSensitive={handleToggleMultiEnvSensitive}
                   onOpenTemplate={() => setTemplatePickerOpen(true)}
+                  onReplace={(next) => {
+                    if (!activeEnv) return
+                    setMultiEnv((prev) =>
+                      prev ? { ...prev, envs: { ...prev.envs, [activeEnv]: next } } : prev,
+                    )
+                  }}
                 />
 
                 {/* 环境对比 + 多环境导出 */}
@@ -507,6 +513,7 @@ export default function App() {
                   onDelete={(id) => setVariables((prev) => prev.filter((v) => v.id !== id))}
                   onToggleSensitive={handleToggleSensitive}
                   onOpenTemplate={() => setTemplatePickerOpen(true)}
+                  onReplace={(next) => setVariables(next)}
                 />
                 <div className="grid gap-6 lg:grid-cols-2">
                   <EnvCompare variables={variables} onSync={handleSync} />

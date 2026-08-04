@@ -64,8 +64,13 @@ export function formatVariables(
       return items
         .map((v) => {
           const val = resolveValue(v)
-          // YAML 中含特殊字符的值用双引号包裹
-          const formatted = /[:#{}\[\],&*!|>'"%@`]/.test(val) || val === ''
+          // YAML 中含特殊字符、或会被解析为布尔/数字/null 的值用双引号包裹
+          // 防止 true/false/yes/no/on/off/null/数字等被 YAML 解析器自动类型转换
+          const needsQuote =
+            val === '' ||
+            /[:#{}\[\],&*!|>'"%@`]/.test(val) ||
+            /^(true|false|yes|no|on|off|null|~|\d+(\.\d+)?)$/i.test(val)
+          const formatted = needsQuote
             ? `"${val.replace(/"/g, '\\"')}"`
             : val
           return `${v.key}: ${formatted}`

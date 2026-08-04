@@ -12,9 +12,11 @@ interface EnvEditorProps {
 export function EnvEditor({ variable, onSave, onClose }: EnvEditorProps) {
   const [draft, setDraft] = useState<EnvVariable | null>(variable)
 
+  // 仅在 variable.id 变化时同步 draft（切换编辑不同变量），避免父组件重渲染传入新引用导致输入丢失
   useEffect(() => {
     setDraft(variable)
-  }, [variable])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variable?.id])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -4,6 +4,12 @@ import type { EnvVariable, ValidationIssue } from '../../types'
 import { maskValue } from '../../utils/sensitive'
 import { copyToClipboard } from '../../utils/formatter/exporter'
 import { countIssues, groupIssuesByVariable } from '../../utils/validator'
+import {
+  previewReplace,
+  applyReplace,
+  countAffectedVariables,
+  type ReplaceableField,
+} from '../../utils/searchReplace'
 
 interface EnvTableProps {
   variables: EnvVariable[]
@@ -14,6 +20,8 @@ interface EnvTableProps {
   onDelete: (id: string) => void
   onToggleSensitive: (id: string) => void
   onOpenTemplate: () => void
+  /** 搜索替换回调：传入替换后的新变量列表 */
+  onReplace?: (next: EnvVariable[]) => void
 }
 
 export function EnvTable({
@@ -25,12 +33,30 @@ export function EnvTable({
   onDelete,
   onToggleSensitive,
   onOpenTemplate,
+  onReplace,
 }: EnvTableProps) {
   const [search, setSearch] = useState('')
   const [revealAll, setRevealAll] = useState(false)
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [showOnlyIssues, setShowOnlyIssues] = useState(false)
+
+  // 搜索替换面板状态
+  const [replaceOpen, setReplaceOpen] = useState(false)
+  const [replaceSearch, setReplaceSearch] = useState('')
+  const [replaceReplacement, setReplaceReplacement] = useState('')
+  const [caseSensitive, setCaseSensitive] = useState(false)
+  const [replaceFields, setReplaceFields] = useState<ReplaceableField[]>(['value'])
+
+  const replaceMatches = useMemo(() => {
+    if (!replaceOpen) return []
+    return previewReplace(variables, {
+      search: replaceSearch,
+      replacement: replaceReplacement,
+      caseSensitive,
+      fields: replaceFields,
+    })
+  }, [replaceOpen, variables, replaceSearch, replaceReplacement, caseSensitive, replaceFields])
 
   const issuesByVar = useMemo(() => groupIssuesByVariable(issues), [issues])
   const { errors: errorCount, warnings: warningCount } = useMemo(() => countIssues(issues), [issues])
@@ -122,11 +148,150 @@ export function EnvTable({
         </button>
 
         <button
+          onClick={() => setReplaceOpen((v) => !v)}
+          className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+            replaceOpen
+              ? 'border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/30 dark:text-blue-300'
+              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
+          }`}
+          title="搜索并替换变量名、值或注释"
+        >
+          搜索替换
+        </button>
+
+        <button
           onClick={onAdd}
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
         >
           + 添加变量
         </button>
+
+        {/* 搜索替换面板 */}
+        {replaceOpen && (
+          <div className="w-full rounded-lg border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300">查找</label>
+                <input
+                  type="text"
+                  value={replaceSearch}
+                  onChange={(e) => setReplaceSearch(e.target.value)}
+                  placeholder="输入要查找的文本…"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300">替换为</label>
+                <input
+                  type="text"
+                  value={replaceReplacement}
+                  onChange={(e) => setReplaceReplacement(e.target.value)}
+                  placeholder="输入替换文本…"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              {/* 字段选择 */}
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-slate-500 dark:text-slate-400">替换字段：</span>
+                {(['key', 'value', 'comment'] as ReplaceableField[]).map((f) => {
+                  const checked = replaceFields.includes(f)
+                  const label = f === 'key' ? '变量名' : f === 'value' ? '变量值' : '注释'
+                  return (
+                    <label key={f} className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setReplaceFields((prev) =>
+                            e.target.checked ? [...prev, f] : prev.filter((x) => x !== f),
+                          )
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-slate-600 dark:text-slate-300">{label}</span>
+                    </label>
+                  )
+                })}
+              </div>
+
+              {/* 区分大小写 */}
+              <label className="flex items-center gap-1 cursor-pointer text-xs">
+                <input
+                  type="checkbox"
+                  checked={caseSensitive}
+                  onChange={(e) => setCaseSensitive(e.target.checked)}
+                  className="rounded"
+                />
+                <span className="text-slate-600 dark:text-slate-300">区分大小写</span>
+              </label>
+
+              {/* 匹配统计 */}
+              {replaceSearch && (
+                <span className="text-xs text-blue-700 dark:text-blue-300">
+                  {replaceMatches.length} 处匹配 · {countAffectedVariables(replaceMatches)} 个变量
+                </span>
+              )}
+
+              {/* 执行替换 */}
+              <button
+                onClick={() => {
+                  if (!replaceSearch || replaceFields.length === 0 || !onReplace) return
+                  const next = applyReplace(variables, {
+                    search: replaceSearch,
+                    replacement: replaceReplacement,
+                    caseSensitive,
+                    fields: replaceFields,
+                  })
+                  onReplace(next)
+                }}
+                disabled={!replaceSearch || replaceFields.length === 0 || replaceMatches.length === 0 || !onReplace}
+                className="ml-auto rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                替换全部（{replaceMatches.length}）
+              </button>
+            </div>
+
+            {/* 匹配预览 */}
+            {replaceMatches.length > 0 && (
+              <div className="mt-3 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    <tr>
+                      <th className="px-3 py-1.5 text-left font-medium">变量</th>
+                      <th className="px-3 py-1.5 text-left font-medium">字段</th>
+                      <th className="px-3 py-1.5 text-left font-medium">原值</th>
+                      <th className="px-3 py-1.5 text-left font-medium">替换后</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {replaceMatches.slice(0, 50).map((m, i) => (
+                      <tr key={i} className="border-t border-slate-100 dark:border-slate-800">
+                        <td className="px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300">{m.key}</td>
+                        <td className="px-3 py-1.5 text-slate-500 dark:text-slate-400">
+                          {m.field === 'key' ? '变量名' : m.field === 'value' ? '变量值' : '注释'}
+                        </td>
+                        <td className="px-3 py-1.5 font-mono text-rose-600 dark:text-rose-400 line-through opacity-70">
+                          {m.before || '(空)'}
+                        </td>
+                        <td className="px-3 py-1.5 font-mono text-emerald-600 dark:text-emerald-400">
+                          {m.after || '(空)'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {replaceMatches.length > 50 && (
+                  <div className="border-t border-slate-100 px-3 py-1.5 text-center text-xs text-slate-400 dark:border-slate-800">
+                    还有 {replaceMatches.length - 50} 处匹配未显示
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 校验汇总条 */}

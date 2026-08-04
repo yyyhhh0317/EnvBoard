@@ -108,7 +108,7 @@ export function parsePyproject(
     // [project.optional-dependencies] -> 每个键是可选组名，值为字符串数组
     const optional = project['optional-dependencies'] as TomlTable | undefined
     if (optional && typeof optional === 'object') {
-      Object.entries(optional).forEach(([, value]) => {
+      Object.entries(optional).forEach(([groupName, value]) => {
         if (Array.isArray(value)) {
           value.forEach((d) => {
             if (typeof d === 'string') {
@@ -118,6 +118,7 @@ export function parsePyproject(
                 name,
                 versionSpec: spec,
                 category: 'optional',
+                subgroup: groupName, // 保留组名（如 dev/test/docs）
                 line: line++,
               })
             }
