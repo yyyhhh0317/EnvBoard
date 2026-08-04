@@ -16,6 +16,7 @@
 | v0.3.0 | `v0.3.0.env.all` | 单文件多环境：`# @env` 分段解析、环境切换、对比 |
 | v0.3.0 | `v0.3.0.env.development` | 多文件导入：文件名识别环境 |
 | v0.3.0 | `v0.3.0.env.production` | 多文件导入：配合 development 测试对比 |
+| v0.4.0 | `v0.4.0.env` | CLI scan 解析：注释分组、引号、敏感值、disabled 变量、空值；CLI edit 编辑验证 |
 
 ## 使用方法
 
@@ -46,6 +47,30 @@
 1. 上传 `v0.3.0.env.development`
 2. 点击「+ 追加环境文件」按钮，选择 `v0.3.0.env.production`
 3. 两个环境自动合并，可切换查看或对比
+
+### CLI 命令验证（v0.4.0）
+
+**前置：** 在 `cli/` 目录执行 `npm install`
+
+**scan 解析验证：**
+```bash
+cd cli
+npx tsx src/index.ts scan -f ../test-fixtures/v0.4.0.env
+```
+预期：识别 13 个变量，`DATABASE_URL` / `DB_PASSWORD` / `API_KEY` / `JWT_SECRET` 标记为敏感值（显示 ******），`OLD_FEATURE_FLAG` 显示为 disabled（灰色删除线）
+
+**JSON 输出验证：**
+```bash
+npx tsx src/index.ts scan -f ../test-fixtures/v0.4.0.env -j
+```
+预期：输出合法 JSON，包含 `files` 数组，每个文件含 `filename` / `type` / `data`
+
+**edit 编辑验证：**
+```bash
+cp ../test-fixtures/v0.4.0.env /tmp/test.env
+npx tsx src/index.ts edit -f /tmp/test.env
+```
+预期：可选择「修改变量值」「删除变量」「添加变量」，操作后文件正确更新且注释保留
 
 ## 约定
 
