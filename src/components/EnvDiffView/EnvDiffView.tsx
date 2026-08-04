@@ -34,6 +34,19 @@ export function EnvDiffView({ envs, envOrder }: EnvDiffViewProps) {
   const allItems = useMemo(() => diffEnvs(envs, envOrder), [envs, envOrder])
   const summary = useMemo(() => summarizeDiff(allItems), [allItems])
 
+  // 预计算各环境的 key->变量定义索引，避免渲染时嵌套 find（O(rows×envs×vars) → O(1) 查找）
+  const envVarMaps = useMemo(() => {
+    const maps: Partial<Record<EnvName, Map<string, import('../../types').EnvVariable>>> = {}
+    for (const envName of envOrder) {
+      const map = new Map<string, import('../../types').EnvVariable>()
+      for (const v of envs[envName] ?? []) {
+        if (!v.isDisabled) map.set(v.key, v)
+      }
+      maps[envName] = map
+    }
+    return maps
+  }, [envs, envOrder])
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return allItems.filter((item) => {
@@ -168,9 +181,8 @@ export function EnvDiffView({ envs, envOrder }: EnvDiffViewProps) {
                   {envOrder.map((envName) => {
                     const val = item.values[envName]
                     const isMissing = val === undefined
-                    // 检查该环境的变量是否标记为敏感
-                    const envVars = envs[envName] ?? []
-                    const varDef = envVars.find((v) => v.key === item.key && !v.isDisabled)
+                    // 从预计算索引中 O(1) 查找变量定义
+                    const varDef = envVarMaps[envName]?.get(item.key)
                     const isSensitive = varDef?.isSensitive ?? false
                     const display = isMissing
                       ? '—'

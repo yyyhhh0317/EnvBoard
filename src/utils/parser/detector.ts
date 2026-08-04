@@ -54,7 +54,29 @@ export function detectTypeByContent(content: string): ProjectType {
   return 'env'
 }
 
-/** 综合检测：优先文件名，其次内容 */
+/** 强信号文件名：扩展名/文件名本身明确指示类型，可直接采信 */
+function isStrongFilename(filename: string): boolean {
+  const name = filename.toLowerCase()
+  return (
+    name === 'package.json' ||
+    name === 'requirements.txt' ||
+    name.startsWith('requirements-') ||
+    name === 'pyproject.toml' ||
+    name === 'yarn.lock' ||
+    name === 'pnpm-lock.yaml' ||
+    name === 'package-lock.json'
+  )
+}
+
+/** 综合检测：强信号文件名直接采信；中性文件名（.env 类/未知）优先看内容 */
 export function detectProjectType(filename: string, content: string): ProjectType {
-  return detectTypeByFilename(filename) ?? detectTypeByContent(content)
+  // 强信号文件名直接采信（package.json / requirements.txt / pyproject.toml / *.lock）
+  if (isStrongFilename(filename)) {
+    return detectTypeByFilename(filename)!
+  }
+  // 中性文件名（.env 类/未知）：优先看内容，内容无法判定时再用文件名兜底
+  const byContent = detectTypeByContent(content)
+  if (byContent !== 'env') return byContent
+  // 内容判定为 env（含默认空内容），用文件名兜底（处理 .env.production 等明确 env 文件名）
+  return detectTypeByFilename(filename) ?? 'env'
 }

@@ -93,6 +93,8 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
             onChange={(e) => {
               const file = e.target.files?.[0]
               if (file) handleFile(file)
+              // 清空 value，允许重复选择同一文件
+              e.target.value = ''
             }}
           />
           <button
@@ -142,7 +144,7 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
           </div>
 
           {/* 对比列表 */}
-          <div className="mt-2 max-h-72 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700">
+          <div className="mt-2 max-h-72 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700">
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                 <tr>

@@ -27,6 +27,8 @@ export function EnvImport({ onImport }: EnvImportProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) readFile(file)
+    // 清空 value，允许重复选择同一文件
+    e.target.value = ''
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -36,9 +38,19 @@ export function EnvImport({ onImport }: EnvImportProps) {
     if (file) readFile(file)
   }
 
+  /** 根据内容推断文件名，避免硬编码导致误判 */
+  function inferPastedFilename(content: string): string {
+    const trimmed = content.trim()
+    if (trimmed.startsWith('{')) return 'pasted.json'
+    if (trimmed.includes('[project]') || trimmed.includes('[tool.poetry]')) return 'pasted.toml'
+    if (/^[A-Za-z0-9_][A-Za-z0-9_.-]*\s*(==|>=|<=|~=|>|<)/m.test(trimmed)) return 'pasted.txt'
+    if (/^[A-Za-z_][A-Za-z0-9_.]*\s*=/m.test(trimmed)) return 'pasted.env'
+    return 'pasted.txt'
+  }
+
   const handleSubmitPaste = () => {
     if (pasteValue.trim()) {
-      onImport(pasteValue, 'pasted.txt')
+      onImport(pasteValue, inferPastedFilename(pasteValue))
       setPasteValue('')
     }
   }

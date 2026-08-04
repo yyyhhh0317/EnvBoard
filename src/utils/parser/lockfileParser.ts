@@ -29,7 +29,7 @@ function parseYarnLock(content: string): Dependency[] {
         const firstKey = keyLine.split(',').map((s) => s.trim())[0]
         const nameMatch = firstKey.match(/^(.+?)@([^@]+)$/)
         const name = nameMatch ? nameMatch[1].replace(/^["']|["']$/g, '') : firstKey
-        const spec = nameMatch ? nameMatch[2] : ''
+        const spec = nameMatch ? nameMatch[2].replace(/["']/g, '') : ''
         deps.push({
           id: genId(),
           name,
