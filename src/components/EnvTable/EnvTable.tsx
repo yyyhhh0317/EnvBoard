@@ -267,8 +267,8 @@ export function EnvTable({
                     </tr>
                   </thead>
                   <tbody>
-                    {replaceMatches.slice(0, 50).map((m, i) => (
-                      <tr key={i} className="border-t border-slate-100 dark:border-slate-800">
+                    {replaceMatches.slice(0, 50).map((m) => (
+                      <tr key={`${m.variableId}-${m.field}`} className="border-t border-slate-100 dark:border-slate-800">
                         <td className="px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300">{m.key}</td>
                         <td className="px-3 py-1.5 text-slate-500 dark:text-slate-400">
                           {m.field === 'key' ? '变量名' : m.field === 'value' ? '变量值' : '注释'}

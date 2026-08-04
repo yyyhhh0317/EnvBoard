@@ -41,12 +41,12 @@ function replaceInField(
   caseSensitive: boolean,
 ): string | null {
   if (!search) return null
-  if (value === null || value === undefined) return null
   const flags = caseSensitive ? 'g' : 'gi'
   // 转义正则特殊字符，按字面量匹配
   const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const re = new RegExp(escaped, flags)
-  const result = value.replace(re, replacement)
+  // 使用函数形式替换，避免 replacement 中的 $&、$1 等被当作特殊模式解释
+  const result = value.replace(re, () => replacement)
   return result !== value ? result : null
 }
 

@@ -32,11 +32,7 @@ import type {
   TemplateVariable,
 } from './types'
 
-function genDepId(): string {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
-}
-
-function genEnvId(): string {
+function genId(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 }
 
@@ -315,7 +311,7 @@ export default function App() {
 
   const handleAddDep = useCallback(() => {
     setEditingDep({
-      id: genDepId(),
+      id: genId(),
       name: '',
       versionSpec: '',
       category: 'dependencies',
@@ -561,7 +557,7 @@ export default function App() {
       <TemplatePicker
         open={templatePickerOpen}
         variables={displayVariables}
-        genId={genEnvId}
+        genId={genId}
         onApply={isMultiEnvMode ? handleApplyTemplateToMultiEnv : handleApplyTemplate}
         onClose={() => setTemplatePickerOpen(false)}
       />

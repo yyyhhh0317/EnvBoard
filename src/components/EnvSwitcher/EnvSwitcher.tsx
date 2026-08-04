@@ -1,7 +1,7 @@
 // 环境切换器：顶部 Tab 切换当前查看的环境，支持新增自定义环境
 import { useState } from 'react'
 import type { EnvMeta, EnvName } from '../../types'
-import { getEnvMeta, genEnvName, PRESET_ENVS } from '../../utils/parser/envPresets'
+import { getEnvMeta } from '../../utils/parser/envPresets'
 
 interface EnvSwitcherProps {
   envOrder: EnvName[]
@@ -96,9 +96,7 @@ export function EnvSwitcher({
   }
 
   // 计算每个环境的元信息
-  const metas: EnvMeta[] = envOrder.map((name) =>
-    getEnvMeta(name, customEnvs.includes(name) ? undefined : undefined),
-  )
+  const metas: EnvMeta[] = envOrder.map((name) => getEnvMeta(name))
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/50">
@@ -186,12 +184,4 @@ export function EnvSwitcher({
       </div>
     </div>
   )
-}
-
-/** 预设环境数量（用于显示提示） */
-export const PRESET_ENV_COUNT = PRESET_ENVS.length
-
-/** 工具：生成下一个自定义环境名 */
-export function nextCustomEnvName(existing: EnvName[]): string {
-  return genEnvName(existing)
 }

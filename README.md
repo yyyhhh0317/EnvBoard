@@ -37,8 +37,9 @@ EnvBoard 用一个可视化界面解决这些问题。
 - 📂 **文件导入** — 支持上传 `.env` / `package.json` / `requirements.txt` / `pyproject.toml` / lockfile 等格式，支持拖拽上传与粘贴文本
 - 📊 **表格化展示** — Key、Value、注释分列显示，状态标记一目了然
 - 🔍 **搜索过滤** — 按变量名或值实时搜索
+- 🔄 **搜索替换** — 批量查找并替换变量名、值或注释，支持区分大小写与预览确认
 - ✏️ **编辑管理** — 修改变量、添加 / 删除变量、复制单条
-- 🔒 **敏感值脱敏** — 自动识别 `PASSWORD` / `SECRET` / `TOKEN` / `KEY` 等敏感变量，默认隐藏为 `****`，支持单条或全部显隐
+- 🔒 **敏感值脱敏** — 自动识别 `PASSWORD` / `SECRET` / `TOKEN` / `API_KEY` 等敏感变量，默认隐藏为 `****`，支持单条或全部显隐
 - 🔄 **对比同步** — 上传 `.env.example` 对比缺失 / 多余 / 空值变量，一键同步缺失项
 - 📤 **多格式导出** — 支持 `.env` / `.env.example`（模板）/ `JSON` / `YAML`，可选是否包含敏感值
 
@@ -49,6 +50,18 @@ EnvBoard 用一个可视化界面解决这些问题。
 - ✏️ **编辑管理** — 修改依赖版本、添加 / 删除依赖、复制包名@版本
 - 🔄 **版本查询**（可选）— 联网查询 npm / PyPI 最新版本，标记过期依赖。默认关闭，开启时明确提示会将包名发送到对应 registry
 - 📤 **格式化导出** — 按原始格式导出修改后的配置文件
+
+### 多环境管理（v0.3.0 新增）
+- 🌗 **环境切换** — 支持 development / staging / production 等预设环境，可自定义环境名
+- 📑 **单文件多环境** — 支持 `# @env <name>` 分段标记，在单个文件中切分多环境变量
+- 📂 **多文件导入** — 一次导入多个 `.env.xxx` 文件，按文件名自动识别环境并合并
+- 🔀 **差异对比** — 可视化各环境间的变量差异，快速发现缺失 / 多余 / 值不同的变量
+- 📤 **多环境导出** — 按环境分别导出，或合并为单文件分段格式
+
+### 配置模板与校验（v0.2.1 新增）
+- 📋 **模板管理** — 预设 Web/数据库/微服务等场景模板，一键应用所需变量集
+- ✅ **变量校验** — 检查必填项为空、占位符值、命名规范、重复 key、类型不匹配等
+- ⚠️ **问题提示** — 区分 error / warning 级别，可一键过滤只看有问题的变量
 
 ### 通用
 - 🌓 **暗色模式** — 跟随系统偏好，可手动切换并记忆
@@ -112,6 +125,8 @@ npm run preview    # 本地预览构建产物
 4. **敏感值显隐** — 敏感值默认显示为 `****`。点击行内的眼睛图标可单条显隐，点击工具栏「显示敏感值」可全部显示。
 5. **对比同步** — 在「对比 .env.example」区域上传模板文件，查看缺失 / 多余 / 空值统计，点「一键同步缺失」补齐变量。
 6. **导出** — 在「导出」区域选择格式（`.env` / `.env.example` / `JSON` / `YAML`），勾选是否包含敏感值，复制到剪贴板或下载文件。
+7. **搜索替换** — 点击工具栏「搜索替换」按钮，输入查找/替换文本，勾选要替换的字段（变量名/值/注释）与是否区分大小写，预览匹配项后点「替换全部」。
+8. **多环境** — 上传含 `# @env <name>` 分段的 .env 文件，或一次导入多个 `.env.xxx` 文件，使用环境切换器查看各环境变量，差异对比查看不同环境间的差异。
 
 ### 支持的解析格式
 
@@ -142,25 +157,69 @@ src/
 ├── components/
 │   ├── Header/          # 顶部导航栏
 │   ├── EnvImport/       # 导入区域（支持多种格式）
-│   ├── EnvTable/        # .env 变量表格
+│   ├── EnvTable/        # .env 变量表格（含搜索替换面板）
 │   ├── EnvEditor/       # .env 变量编辑弹窗
 │   ├── EnvCompare/      # .env 对比区域
 │   ├── EnvExport/       # .env 导出区域
+│   ├── EnvSwitcher/     # 多环境切换器
+│   ├── EnvDiffView/     # 多环境差异对比
+│   ├── MultiEnvExport/  # 多环境导出
+│   ├── TemplatePicker/  # 配置模板选择
 │   ├── DependencyTable/ # 依赖列表表格
 │   ├── DependencyEditor/# 依赖编辑弹窗
 │   └── DependencyExport/# 依赖导出区域
 ├── hooks/
 │   └── useTheme.ts      # 暗色模式
 ├── utils/
-│   ├── parser/          # 解析器：.env / package.json / requirements / pyproject / lockfile / TOML / 文件检测
+│   ├── parser/          # 解析器：.env / package.json / requirements / pyproject / lockfile / TOML / 文件检测 / 多环境
 │   ├── formatter/       # 导出格式化：.env / JSON / YAML / 依赖
 │   ├── registry/        # npm / PyPI 版本查询（opt-in）
+│   ├── validator/       # 变量校验：类型 / 占位符 / 命名 / 重复
 │   ├── sensitive.ts     # 敏感值识别
+│   ├── searchReplace.ts # 搜索替换工具
 │   └── sample.ts        # 示例数据
 ├── types/               # TypeScript 类型定义
 ├── App.tsx              # 根据文件类型路由到 .env / 依赖视图
 └── main.tsx
 ```
+
+## 架构说明
+
+### 数据流
+
+```
+文件 / 粘贴文本
+     │
+     ▼
+ detectProjectType() ── 识别类型（env / npm / pip / poetry / lockfile）
+     │
+     ▼
+ 对应 Parser ── 解析为统一结构（EnvVariable[] 或 DependencyParseResult）
+     │
+     ▼
+ App.tsx 状态管理 ── variables[] / multiEnv / depResult
+     │
+     ├──→ EnvTable ── 表格展示 + 搜索 + 搜索替换 + 编辑
+     │         │
+     │         └──→ EnvEditor ── 单变量编辑
+     │
+     ├──→ EnvCompare ── 对比 .env.example
+     ├──→ EnvDiffView ── 多环境差异对比
+     ├──→ validator ── 校验问题反馈到表格
+     └──→ exporter ── 导出为 .env / JSON / YAML
+```
+
+### 解析器设计
+
+所有解析器遵循统一契约：输入 `(content: string, filename: string)`，输出带 `errors` 字段的结构。文件类型检测采用**强信号文件名直接采信 + 中性文件名优先看内容**策略，避免 `pasted.env` 这类命名导致 JSON 内容被误判为 .env。
+
+### 敏感值识别
+
+按非字母数字字符分段后精确匹配关键词（`PASSWORD` / `SECRET` / `TOKEN` / `API_KEY` 等），避免 `MONKEY` 含 `KEY`、`AUTHOR` 含 `AUTH` 的子串误判。
+
+### 数据隐私
+
+所有解析、编辑、导出均在浏览器本地完成。版本查询为唯一联网功能，默认关闭，开启时仅发送包名到对应 registry（npm / PyPI），不发送任何 .env 内容。
 
 ## 部署
 
@@ -184,21 +243,60 @@ src/
 
 ## 开发计划
 
-- [x] v0.1.0 — `.env` 解析 + 展示 + 编辑
-- [x] v0.1.0 — 对比功能 + 敏感值识别
-- [x] v0.1.0 — 多格式导出（JSON、YAML）
-- [x] v0.1.0 — 暗色模式 + 错误处理
-- [x] v0.2.0 — `package.json` / `requirements.txt` / `pyproject.toml` / lockfile 解析展示
-- [x] v0.2.0 — 依赖分类过滤、编辑、导出
-- [x] v0.2.0 — npm / PyPI 最新版本查询（opt-in）
+- [x] v0.1.0 — `.env` 解析 + 展示 + 编辑 + 对比 + 敏感值识别 + 多格式导出 + 暗色模式
+- [x] v0.2.0 — `package.json` / `requirements.txt` / `pyproject.toml` / lockfile 解析展示、分类过滤、编辑、导出、版本查询
 - [x] v0.2.1 — 配置模板与变量校验
-- [ ] v0.3.0 — 多环境切换（dev / test / staging / prod）
-- [ ] v0.4.0 — 本地 CLI 执行安装/卸载命令（Phase 2）
-- [ ] v0.5.0 — 本地加密存储敏感变量
-- [ ] v0.5.0 — 变更历史
-- [ ] v1.0.0 — 完善文档与稳定发布
+- [x] v0.3.0 — 多环境切换（dev / test / staging / prod）、单文件分段、差异对比、多环境导出
+- [x] v0.4.0 — 本地 CLI（scan / status / install / uninstall / edit）
+- [x] v1.0.0 — 搜索替换、测试覆盖（163 用例）、bug 修复、文档完善
 
 欢迎在 [Issues](https://github.com/yyyhhh0317/EnvBoard/issues) 提交需求或反馈。
+
+## FAQ
+
+### 数据安全
+
+**Q：上传的配置文件会被发送到服务器吗？**
+
+不会。所有解析、编辑、导出都在浏览器本地完成。文件内容不会上传到任何服务器。
+
+**Q：版本查询功能会发送什么数据？**
+
+版本查询是可选功能，默认关闭。开启后仅会将**包名**发送到对应 registry（npm 或 PyPI），不会发送 .env 内容或任何配置值。
+
+**Q：敏感值是如何识别的？**
+
+按非字母数字字符分段后精确匹配关键词（`PASSWORD` / `SECRET` / `TOKEN` / `API_KEY` / `PRIVATE` / `CREDENTIAL` 等）。也可手动点击锁图标标记/取消敏感。
+
+### 功能使用
+
+**Q：搜索替换支持正则表达式吗？**
+
+不支持。搜索替换为纯文本匹配，避免正则注入风险。支持区分大小写选项。正则特殊字符（如 `$`、`.`、`*`）按字面量匹配。
+
+**Q：多环境模式如何使用？**
+
+两种方式：
+1. **单文件分段**：在 .env 文件中用 `# @env development` 标记分段头，后续变量归属该环境
+2. **多文件导入**：一次选择多个 `.env.development` / `.env.production` 文件，按文件名自动识别环境
+
+**Q：导出为 YAML 时为什么数字和布尔值被加了引号？**
+
+为防止 YAML 解析器将 `true` / `false` / `null` / 数字自动类型转换，这些值会用双引号包裹，确保导出后值类型保持为字符串。
+
+**Q：为什么 `MONKEY` / `AUTHOR` 不再被识别为敏感变量？**
+
+v1.0.0 修复了敏感值识别的误判：改为分段精确匹配，避免 `MONKEY` 含 `KEY`、`AUTHOR` 含 `AUTH` 的子串误判。如需标记，可手动点击锁图标。
+
+### 兼容性
+
+**Q：支持哪些浏览器？**
+
+支持所有现代浏览器（Chrome / Firefox / Safari / Edge 最新版）。使用了 Web Crypto API、Clipboard API 等现代特性。
+
+**Q：可以在离线环境使用吗？**
+
+可以。除版本查询外，所有功能均可离线使用。
 
 ## 贡献指南
 

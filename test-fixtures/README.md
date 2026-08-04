@@ -17,6 +17,7 @@
 | v0.3.0 | `v0.3.0.env.development` | 多文件导入：文件名识别环境 |
 | v0.3.0 | `v0.3.0.env.production` | 多文件导入：配合 development 测试对比 |
 | v0.4.0 | `v0.4.0.env` | CLI scan 解析：注释分组、引号、敏感值、disabled 变量、空值；CLI edit 编辑验证 |
+| v1.0.0 | `v1.0.0.env` | 搜索替换、敏感值误判修复（MONKEY/AUTHOR）、YAML 导出类型漂移修复 |
 
 ## 使用方法
 
@@ -71,6 +72,26 @@ cp ../test-fixtures/v0.4.0.env /tmp/test.env
 npx tsx src/index.ts edit -f /tmp/test.env
 ```
 预期：可选择「修改变量值」「删除变量」「添加变量」，操作后文件正确更新且注释保留
+
+### 搜索替换与修复验证（v1.0.0）
+
+**搜索替换：**
+1. 上传 `v1.0.0.env`
+2. 点击工具栏「搜索替换」按钮
+3. 查找 `localhost` 替换为 `127.0.0.1`，勾选「变量值」
+   - 预期：3 处匹配（DATABASE_URL / REDIS_URL / API_BASE_URL）
+4. 点「替换全部」，值应被替换
+5. 查找 `DEV` 替换为 `PROD`，勾选「变量名」「变量值」
+   - 预期：DEV_MODE 变量名改为 PROD_MODE
+
+**敏感值误判修复：**
+- `DB_PASSWORD` / `API_KEY` 应标记为敏感（含 PASSWORD / API_KEY 段）
+- `MONKEY_NAME` / `AUTHOR_NAME` **不应**标记为敏感（分段后为 MONKEY / AUTHOR，不匹配关键词）
+
+**YAML 导出修复：**
+1. 导出为 YAML 格式
+2. `DEBUG: "true"` / `PORT: "3000"` 应加引号（防止类型漂移）
+3. `APP_NAME: myapp` 不加引号
 
 ## 约定
 
