@@ -1,6 +1,7 @@
 // 依赖编辑弹窗
 import { useEffect, useState } from 'react'
 import type { Dependency, DependencyCategory } from '../../types'
+import { useModalFocus } from '../../hooks/useModal'
 
 interface DependencyEditorProps {
   dependency: Dependency | null
@@ -30,18 +31,10 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 export function DependencyEditor({ dependency, onSave, onClose }: DependencyEditorProps) {
   const [draft, setDraft] = useState<Dependency | null>(dependency)
+  // a11y：焦点圈定 / Escape 关闭 / 恢复焦点
+  const dialogRef = useModalFocus(dependency !== null, onClose)
 
   useEffect(() => setDraft(dependency), [dependency])
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    if (dependency) {
-      window.addEventListener('keydown', onKey)
-      return () => window.removeEventListener('keydown', onKey)
-    }
-  }, [dependency, onClose])
 
   if (!dependency || !draft) return null
 
@@ -50,31 +43,38 @@ export function DependencyEditor({ dependency, onSave, onClose }: DependencyEdit
   const handleSave = () => onSave(draft)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dep-editor-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800">
-        <h2 className="mb-4 text-lg font-bold text-slate-900 dark:text-white">编辑依赖</h2>
+        <h2 id="dep-editor-title" className="mb-4 text-lg font-bold text-slate-900 dark:text-white">编辑依赖</h2>
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label htmlFor="dep-editor-name" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               名称
             </label>
             <input
+              id="dep-editor-name"
               type="text"
               value={draft.name}
               onChange={(e) => update({ name: e.target.value })}
               placeholder="包名 / 脚本名"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
-              autoFocus
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label htmlFor="dep-editor-version" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               {draft.isScript ? '命令' : '版本约束'}
             </label>
             <input
+              id="dep-editor-version"
               type="text"
               value={draft.versionSpec}
               onChange={(e) => update({ versionSpec: e.target.value })}
@@ -84,8 +84,9 @@ export function DependencyEditor({ dependency, onSave, onClose }: DependencyEdit
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">分类</label>
+            <label htmlFor="dep-editor-category" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">分类</label>
             <select
+              id="dep-editor-category"
               value={draft.category}
               onChange={(e) => update({ category: e.target.value as DependencyCategory, isScript: e.target.value === 'scripts' })}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
@@ -97,8 +98,9 @@ export function DependencyEditor({ dependency, onSave, onClose }: DependencyEdit
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">备注</label>
+            <label htmlFor="dep-editor-comment" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">备注</label>
             <input
+              id="dep-editor-comment"
               type="text"
               value={draft.comment ?? ''}
               onChange={(e) => update({ comment: e.target.value })}

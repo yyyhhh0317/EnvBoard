@@ -119,6 +119,7 @@ export function EnvTable({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜索变量名或值…"
+            aria-label="搜索变量名或值"
             className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
           />
         </div>
@@ -129,6 +130,7 @@ export function EnvTable({
             onClick={onUndo}
             disabled={!canUndo}
             title="撤销 (Ctrl/Cmd+Z)"
+            aria-label="撤销"
             className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -139,6 +141,7 @@ export function EnvTable({
             onClick={onRedo}
             disabled={!canRedo}
             title="重做 (Ctrl/Cmd+Shift+Z)"
+            aria-label="重做"
             className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -207,8 +210,9 @@ export function EnvTable({
           <div className="w-full rounded-lg border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300">查找</label>
+                <label htmlFor="replace-search" className="block text-xs font-medium text-slate-600 dark:text-slate-300">查找</label>
                 <input
+                  id="replace-search"
                   type="text"
                   value={replaceSearch}
                   onChange={(e) => setReplaceSearch(e.target.value)}
@@ -217,8 +221,9 @@ export function EnvTable({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300">替换为</label>
+                <label htmlFor="replace-replacement" className="block text-xs font-medium text-slate-600 dark:text-slate-300">替换为</label>
                 <input
+                  id="replace-replacement"
                   type="text"
                   value={replaceReplacement}
                   onChange={(e) => setReplaceReplacement(e.target.value)}
@@ -485,6 +490,7 @@ export function EnvTable({
                         <button
                           onClick={() => toggleReveal(v.id)}
                           title={revealed ? '隐藏' : '显示'}
+                          aria-label={revealed ? '隐藏敏感值' : '显示敏感值'}
                           className="rounded p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
                         >
                           {revealed ? (
@@ -503,6 +509,7 @@ export function EnvTable({
                       <button
                         onClick={() => handleCopy(v)}
                         title="复制"
+                        aria-label="复制"
                         className="rounded p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
                       >
                         {copiedId === v.id ? (
@@ -519,6 +526,7 @@ export function EnvTable({
                       <button
                         onClick={() => onToggleSensitive(v.id)}
                         title={v.isSensitive ? '取消敏感标记' : '标记为敏感'}
+                        aria-label={v.isSensitive ? '取消敏感标记' : '标记为敏感'}
                         className={`rounded p-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-700 ${
                           v.isSensitive ? 'text-amber-500' : 'text-slate-500 dark:text-slate-400'
                         }`}
@@ -531,6 +539,7 @@ export function EnvTable({
                       <button
                         onClick={() => onEdit(v)}
                         title="编辑"
+                        aria-label="编辑"
                         className="rounded p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-emerald-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-emerald-400"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -541,6 +550,7 @@ export function EnvTable({
                       <button
                         onClick={() => onDelete(v.id)}
                         title="删除"
+                        aria-label="删除"
                         className="rounded p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

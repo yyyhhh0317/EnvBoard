@@ -113,6 +113,7 @@ export function EnvSwitcher({
             <div key={meta.name} className="group relative inline-flex">
               <button
                 onClick={() => onSelect(meta.name)}
+                aria-pressed={isActive}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition ${
                   isActive ? classes.active : classes.idle
                 }`}
@@ -132,8 +133,8 @@ export function EnvSwitcher({
                     e.stopPropagation()
                     onRemoveCustom(meta.name)
                   }}
-                  className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-slate-300 text-slate-600 group-hover:flex hover:bg-red-500 hover:text-white dark:bg-slate-600 dark:text-slate-200"
-                  title="删除自定义环境"
+                  aria-label={`删除自定义环境 ${meta.label}`}
+                  className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-300 text-slate-600 opacity-0 transition hover:bg-red-500 hover:text-white focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-slate-600 dark:text-slate-200"
                 >
                   <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
@@ -159,8 +160,9 @@ export function EnvSwitcher({
                 }
               }}
               placeholder="环境名（如 preview）"
-              className="w-32 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+              aria-label="新环境名称"
               autoFocus
+              className="w-32 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
             />
             <button
               onClick={handleAdd}

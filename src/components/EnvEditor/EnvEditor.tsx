@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import type { EnvVariable } from '../../types'
 import { isSensitiveKey } from '../../utils/sensitive'
+import { useModalFocus } from '../../hooks/useModal'
 
 interface EnvEditorProps {
   variable: EnvVariable | null
@@ -11,22 +12,14 @@ interface EnvEditorProps {
 
 export function EnvEditor({ variable, onSave, onClose }: EnvEditorProps) {
   const [draft, setDraft] = useState<EnvVariable | null>(variable)
+  // a11y：焦点圈定 / Escape 关闭 / 恢复焦点
+  const dialogRef = useModalFocus(variable !== null, onClose)
 
   // 仅在 variable.id 变化时同步 draft（切换编辑不同变量），避免父组件重渲染传入新引用导致输入丢失
   useEffect(() => {
     setDraft(variable)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [variable?.id])
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    if (variable) {
-      window.addEventListener('keydown', onKey)
-      return () => window.removeEventListener('keydown', onKey)
-    }
-  }, [variable, onClose])
 
   if (!variable || !draft) return null
 
@@ -43,36 +36,44 @@ export function EnvEditor({ variable, onSave, onClose }: EnvEditorProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="env-editor-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
       <div
         className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
         onClick={onClose}
+        aria-hidden="true"
       />
       <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800">
-        <h2 className="mb-4 text-lg font-bold text-slate-900 dark:text-white">
+        <h2 id="env-editor-title" className="mb-4 text-lg font-bold text-slate-900 dark:text-white">
           {draft.isNew ? '添加变量' : '编辑变量'}
         </h2>
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label htmlFor="env-editor-key" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               变量名 (Key)
             </label>
             <input
+              id="env-editor-key"
               type="text"
               value={draft.key}
               onChange={(e) => handleKeyChange(e.target.value)}
               placeholder="例如：DATABASE_URL"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
-              autoFocus
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label htmlFor="env-editor-value" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               变量值 (Value)
             </label>
             <input
+              id="env-editor-value"
               type="text"
               value={draft.value}
               onChange={(e) => update({ value: e.target.value })}
@@ -86,10 +87,11 @@ export function EnvEditor({ variable, onSave, onClose }: EnvEditorProps) {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            <label htmlFor="env-editor-comment" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               注释
             </label>
             <input
+              id="env-editor-comment"
               type="text"
               value={draft.comment}
               onChange={(e) => update({ comment: e.target.value })}

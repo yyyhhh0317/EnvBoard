@@ -20,6 +20,25 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 键盘导航可见焦点（a11y v1.1.0） */
+:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* 减少动态效果偏好：关闭非必要动画 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* 自定义滚动条，提升表格观感 */
 ::-webkit-scrollbar {
   width: 10px;

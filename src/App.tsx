@@ -505,7 +505,7 @@ export default function App() {
         }
       />
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
+      <main id="main-content" className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6">
         {!hasData ? (
           <div className="space-y-6">
             <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 p-10 text-center text-white shadow-xl shadow-emerald-500/20">
