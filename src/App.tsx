@@ -14,6 +14,7 @@ import { EnvDiffView } from './components/EnvDiffView/EnvDiffView'
 import { MultiEnvExport } from './components/MultiEnvExport/MultiEnvExport'
 import { useTheme } from './hooks/useTheme'
 import { useHistory } from './hooks/useHistory'
+import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { createEmptyVariable, parseEnvFile } from './utils/parser/envParser'
 import { parsePackageJson } from './utils/parser/packageJsonParser'
 import { parseRequirements } from './utils/parser/requirementsParser'
@@ -43,6 +44,9 @@ export default function App() {
 
   // 撤销/重做（v1.1.0）：仅跟踪单环境 .env 的 variables
   const history = useHistory()
+
+  // 会话持久化（v1.1.0）：刷新/重开自动恢复，敏感值加密落盘
+  const { hydrated, setHydrated, restore, persist, clear: clearSession } = useSessionPersistence()
 
   // .env 模式状态
   const [variables, setVariables] = useState<EnvVariable[]>([])
@@ -314,6 +318,46 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [isEnvMode, isMultiEnvMode, handleUndo, handleRedo])
 
+  // 挂载时恢复上次会话（恢复完成前不自动保存，避免空状态覆盖已存会话）
+  useEffect(() => {
+    let cancelled = false
+    void restore().then((s) => {
+      if (cancelled) return
+      if (s) {
+        setProjectType(s.projectType)
+        setFilename(s.filename)
+        setVariables(s.variables)
+        setDepResult(s.depResult)
+        setMultiEnv(s.multiEnv)
+        setActiveEnv(s.activeEnv)
+        setCustomEnvs(s.customEnvs)
+        setTemplateVars(s.templateVars)
+      }
+      setHydrated(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [restore, setHydrated])
+
+  // 状态变化后防抖自动保存（无数据时不保存；敏感值由存储层加密）
+  useEffect(() => {
+    if (!hydrated || projectType === null) return
+    const t = setTimeout(() => {
+      void persist({
+        projectType,
+        filename,
+        variables,
+        depResult,
+        multiEnv,
+        activeEnv,
+        customEnvs,
+        templateVars,
+      })
+    }, 400)
+    return () => clearTimeout(t)
+  }, [hydrated, persist, projectType, filename, variables, depResult, multiEnv, activeEnv, customEnvs, templateVars])
+
   // ===== .env 模式操作 =====
   const handleSaveEnv = useCallback(
     (updated: EnvVariable) => {
@@ -403,7 +447,8 @@ export default function App() {
     setActiveEnv(null)
     setCustomEnvs([])
     history.clearHistory()
-  }, [history])
+    clearSession()
+  }, [history, clearSession])
 
   // 应用模板：合并变量并更新模板变量（用于后续校验）
   const handleApplyTemplate = useCallback(
