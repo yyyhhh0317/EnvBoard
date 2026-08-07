@@ -227,10 +227,12 @@ describe('validator 校验器', () => {
 
   describe('countIssues 统计', () => {
     it('正确统计 errors 和 warnings', () => {
+      // 仅关注 severity 字段的测试夹具
       const issues = [
         { severity: 'error' as const },
         { severity: 'error' as const },
         { severity: 'warning' as const },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any
       const result = countIssues(issues)
       expect(result.errors).toBe(2)

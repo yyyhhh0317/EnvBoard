@@ -100,7 +100,7 @@ function extractVersion(spec: string): string {
 
 /** 归一化版本号便于比较（去前缀 v，补全补丁号） */
 function normalizeVersion(v: string): string {
-  let s = v.trim().replace(/^v/, '')
+  const s = v.trim().replace(/^v/, '')
   const parts = s.split('.')
   while (parts.length < 3) parts.push('0')
   return parts.slice(0, 3).join('.')

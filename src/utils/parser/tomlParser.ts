@@ -17,7 +17,7 @@ export function parseToml(text: string): TomlTable {
   let pendingArray: { key: string; parts: string[] } | null = null
 
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i].trim()
+    const line = lines[i].trim()
     if (!line || line.startsWith('#')) continue
 
     // 正在收集多行数组
