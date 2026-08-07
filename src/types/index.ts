@@ -138,6 +138,49 @@ export interface DependencyParseResult {
   errors: string[]
   /** 源文件名 */
   filename: string
+  /** 依赖树（package-lock.json v3 可构建，v1.4.0） */
+  graph?: DepGraphNode | null
+}
+
+// ===== 漏洞检查与依赖图（v1.4.0）=====
+
+/** 安全公告严重级别 */
+export type AdvisorySeverity = 'critical' | 'high' | 'moderate' | 'low'
+
+/** 单条安全公告 */
+export interface DependencyAdvisory {
+  /** 公告 id（如 GHSA-xxxx / CVE-xxxx） */
+  id: string
+  /** 标题/摘要 */
+  title: string
+  /** 严重级别 */
+  severity: AdvisorySeverity
+  /** 受影响版本范围描述 */
+  range: string
+  /** 详情链接 */
+  url?: string
+}
+
+/** 存在漏洞的依赖 */
+export interface VulnerabilityInfo {
+  name: string
+  /** 当前版本（锁定的或声明的） */
+  version: string
+  /** 命中的公告列表 */
+  advisories: DependencyAdvisory[]
+}
+
+/** 依赖树节点（package-lock.json v3） */
+export interface DepGraphNode {
+  name: string
+  /** 锁定的版本（解析不到为空串） */
+  version: string
+  /** 父级声明的版本范围（根节点有值） */
+  spec?: string
+  /** 子依赖 */
+  children: DepGraphNode[]
+  /** 已在祖先链中出现（循环/重复引用），不展开 */
+  duplicated?: boolean
 }
 
 /** registry 来源类型 */

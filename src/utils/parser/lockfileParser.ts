@@ -1,5 +1,6 @@
 // lockfile 解析器：yarn.lock / pnpm-lock.yaml / package-lock.json
-import type { Dependency, DependencyParseResult } from '../../types'
+import type { Dependency, DependencyParseResult, DepGraphNode } from '../../types'
+import { buildLockGraph } from '../graph/lockGraph'
 
 function genId(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
@@ -125,6 +126,20 @@ export function parseLockfile(
   const errors: string[] = []
   const name = filename.toLowerCase()
   let dependencies: Dependency[] = []
+  let graph: DepGraphNode | null = null
+
+  // package-lock.json：解析依赖 + 构建依赖树（v3 含 packages 字段）
+  const tryParsePackageLock = (text: string) => {
+    try {
+      const lock = JSON.parse(text) as { packages?: Record<string, { version?: string; dependencies?: Record<string, string> }> }
+      if (lock.packages && typeof lock.packages === 'object') {
+        graph = buildLockGraph(lock)
+      }
+    } catch {
+      graph = null
+    }
+    return parsePackageLock(text)
+  }
 
   if (name === 'yarn.lock') {
     dependencies = parseYarnLock(content)
@@ -133,12 +148,12 @@ export function parseLockfile(
     dependencies = parsePnpmLock(content)
     meta['format'] = 'pnpm-lock.yaml'
   } else if (name === 'package-lock.json') {
-    dependencies = parsePackageLock(content)
+    dependencies = tryParsePackageLock(content)
     meta['format'] = 'package-lock.json'
   } else {
     // 按内容推断
     if (content.includes('lockfileVersion')) {
-      dependencies = parsePackageLock(content)
+      dependencies = tryParsePackageLock(content)
       meta['format'] = 'package-lock.json'
     } else if (content.startsWith('#') && content.includes('yarn')) {
       dependencies = parseYarnLock(content)
@@ -154,5 +169,5 @@ export function parseLockfile(
   }
 
   meta['count'] = String(dependencies.length)
-  return { type: 'lockfile', dependencies, meta, errors, filename }
+  return { type: 'lockfile', dependencies, meta, errors, filename, graph }
 }

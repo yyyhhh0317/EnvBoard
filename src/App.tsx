@@ -719,6 +719,7 @@ export default function App() {
                   dependencies={depResult.dependencies}
                   projectType={depResult.type}
                   meta={depResult.meta}
+                  graph={depResult.graph}
                   onEdit={setEditingDep}
                   onAdd={handleAddDep}
                   onDelete={handleDeleteDep}

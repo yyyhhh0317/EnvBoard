@@ -2,6 +2,22 @@
 
 本项目版本变更记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
+## [1.4.0] - 2026-08-07
+
+### 新增
+- **依赖漏洞检查**（可选联网，默认关闭）：
+  - npm 走 npm audit bulk 接口（单次批量请求）、PyPI 走 Google OSV API
+  - 按严重级别（严重 / 高危 / 中危 / 低危）展示公告 id、标题、影响版本与详情链接
+  - 与版本查询一致的隐私提示（发送包名与版本，不发送其他数据）
+- **依赖关系图**：`package-lock.json` v3 解析为可折叠依赖树
+  - 依赖解析优先顶层 `node_modules/<name>`，兜底任意同名条目（近似可视化）
+  - 循环 / 重复引用标记为「循环/重复」并停止展开，深度上限 30
+- **工具导出**：`extractVersion` / `normalizeVersion` 从 versionCheck 导出（漏洞检查复用）
+
+### 测试
+- 新增 vulnerabilityCheck 8 例、lockGraph 5 例，lockfileParser 补依赖树断言
+- 套件共 290 例全部通过（26 个测试文件）
+
 ## [1.3.0] - 2026-08-07
 
 ### 新增

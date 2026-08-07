@@ -60,6 +60,23 @@ describe('parseLockfile: package-lock.json', () => {
     const scoped = result.dependencies.find((d) => d.name === '@scope/pkg')
     expect(scoped?.lockedVersion).toBe('2.0.0')
   })
+
+  it('attaches a dependency graph for v3 locks (v1.4.0)', () => {
+    const content = JSON.stringify({
+      name: 'demo',
+      lockfileVersion: 3,
+      packages: {
+        '': { name: 'demo', dependencies: { react: '^18.0.0' } },
+        'node_modules/react': { version: '18.3.1', dependencies: { scheduler: '^0.23.0' } },
+        'node_modules/scheduler': { version: '0.23.2' },
+      },
+    })
+    const result = parseLockfile(content, 'package-lock.json')
+    expect(result.graph).not.toBeNull()
+    expect(result.graph!.name).toBe('demo')
+    expect(result.graph!.children[0].name).toBe('react')
+    expect(result.graph!.children[0].children[0].name).toBe('scheduler')
+  })
 })
 
 describe('parseLockfile: content inference + errors', () => {

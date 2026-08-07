@@ -92,14 +92,14 @@ export async function fetchLatestVersions(
 }
 
 /** 从版本约束中提取纯版本号，如 ^4.3.3 -> 4.3.3，>=1.0,<2.0 -> 1.0 */
-function extractVersion(spec: string): string {
+export function extractVersion(spec: string): string {
   if (!spec) return ''
   const match = spec.match(/(\d+\.\d+(?:\.\d+)?(?:[.-][A-Za-z0-9]+)?)/)
   return match ? match[1] : ''
 }
 
 /** 归一化版本号便于比较（去前缀 v，补全补丁号） */
-function normalizeVersion(v: string): string {
+export function normalizeVersion(v: string): string {
   const s = v.trim().replace(/^v/, '')
   const parts = s.split('.')
   while (parts.length < 3) parts.push('0')

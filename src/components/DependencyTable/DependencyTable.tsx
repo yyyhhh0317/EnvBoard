@@ -1,13 +1,18 @@
-// 依赖列表表格：搜索、分类过滤、版本查询、编辑、删除
+// 依赖列表表格：搜索、分类过滤、版本查询、漏洞检查、依赖图、编辑、删除
 import { useMemo, useState } from 'react'
-import type { Dependency, ProjectType, RegistryType } from '../../types'
+import type { Dependency, DepGraphNode, ProjectType, RegistryType, VulnerabilityInfo } from '../../types'
 import { fetchLatestVersions } from '../../utils/registry/versionCheck'
+import { checkVulnerabilities } from '../../utils/registry/vulnerabilityCheck'
 import { copyToClipboard } from '../../utils/formatter/exporter'
+import { DependencyGraph } from '../DependencyGraph/DependencyGraph'
+import { DependencyVulnReport } from '../DependencyVulnReport/DependencyVulnReport'
 
 interface DependencyTableProps {
   dependencies: Dependency[]
   projectType: ProjectType
   meta: Record<string, string>
+  /** 依赖树（package-lock.json v3 解析可得，v1.4.0） */
+  graph?: DepGraphNode | null
   onEdit: (dep: Dependency) => void
   onAdd: () => void
   onDelete: (id: string) => void
@@ -28,6 +33,7 @@ export function DependencyTable({
   dependencies,
   projectType,
   meta,
+  graph,
   onEdit,
   onAdd,
   onDelete,
@@ -38,6 +44,12 @@ export function DependencyTable({
   const [checking, setChecking] = useState(false)
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [versionEnabled, setVersionEnabled] = useState(false)
+  // 漏洞检查（v1.4.0）
+  const [vulnEnabled, setVulnEnabled] = useState(false)
+  const [checkingVuln, setCheckingVuln] = useState(false)
+  const [vulnResults, setVulnResults] = useState<VulnerabilityInfo[]>([])
+  // 依赖图（v1.4.0）
+  const [graphOpen, setGraphOpen] = useState(false)
   const [deps, setDeps] = useState<Dependency[]>(dependencies)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -91,6 +103,23 @@ export function DependencyTable({
     }
   }
 
+  // 漏洞检查（v1.4.0）：opt-in，发送包名+版本到 npm audit / OSV
+  const handleCheckVulnerabilities = async () => {
+    if (!registryType || checkingVuln) return
+    setCheckingVuln(true)
+    setProgress({ done: 0, total: 0 })
+    try {
+      const { vulnerable } = await checkVulnerabilities(deps, registryType, (done, total) =>
+        setProgress({ done, total }),
+      )
+      setVulnResults(vulnerable)
+    } finally {
+      setCheckingVuln(false)
+    }
+  }
+
+  const vulnCount = vulnResults.reduce((n, r) => n + r.advisories.length, 0)
+
   const handleCopy = async (d: Dependency) => {
     const text = d.isScript ? d.versionSpec : `${d.name}@${d.lockedVersion ?? d.versionSpec}`
     const ok = await copyToClipboard(text)
@@ -139,6 +168,48 @@ export function DependencyTable({
           </button>
         )}
 
+        {/* 漏洞检查（v1.4.0） */}
+        {registryType && (
+          <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400" title="开启后会向 npm audit / Google OSV 发送包名与版本以检查已知漏洞">
+            <input
+              type="checkbox"
+              checked={vulnEnabled}
+              onChange={(e) => setVulnEnabled(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-slate-300 text-red-600 focus:ring-red-500"
+            />
+            联网查漏洞
+          </label>
+        )}
+
+        {vulnEnabled && registryType && (
+          <button
+            onClick={handleCheckVulnerabilities}
+            disabled={checkingVuln}
+            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300"
+          >
+            {checkingVuln
+              ? `检查中 ${progress.done}/${progress.total}`
+              : vulnCount > 0
+                ? `检查漏洞（${vulnCount} 条）`
+                : '检查漏洞'}
+          </button>
+        )}
+
+        {/* 依赖图（v1.4.0）：package-lock.json 可构建 */}
+        {graph && (
+          <button
+            onClick={() => setGraphOpen((v) => !v)}
+            aria-expanded={graphOpen}
+            className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+              graphOpen
+                ? 'border-teal-400 bg-teal-50 text-teal-700 dark:border-teal-600 dark:bg-teal-900/30 dark:text-teal-300'
+                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
+            }`}
+          >
+            依赖图
+          </button>
+        )}
+
         <button
           onClick={onAdd}
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
@@ -147,12 +218,14 @@ export function DependencyTable({
         </button>
       </div>
 
-      {versionEnabled && (
+      {(versionEnabled || vulnEnabled) && (
         <div className="flex items-center gap-2 border-b border-amber-200/80 bg-amber-50/80 px-4 py-2.5 text-xs text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-300">
           <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          联网查询会将包名发送到 {registryType === 'npm' ? 'npm registry' : 'PyPI'}，与本地处理模式不同。如需隐私请关闭此选项。
+          联网查询会将包名（{versionEnabled && vulnEnabled ? '与版本' : versionEnabled ? '' : '与版本'}）发送到{' '}
+          {registryType === 'npm' ? 'npm registry / npm audit' : 'PyPI / Google OSV'}
+          ，与本地处理模式不同。如需隐私请关闭相关选项。
         </div>
       )}
 
@@ -333,9 +406,24 @@ export function DependencyTable({
         </table>
       </div>
 
+      {/* 依赖图（v1.4.0） */}
+      {graphOpen && graph && (
+        <div className="border-t border-slate-200/80 p-4 dark:border-slate-700/80">
+          <DependencyGraph graph={graph} />
+        </div>
+      )}
+
+      {/* 漏洞报告（v1.4.0） */}
+      {vulnResults.length > 0 && (
+        <div className="border-t border-slate-200/80 p-4 dark:border-slate-700/80">
+          <DependencyVulnReport results={vulnResults} />
+        </div>
+      )}
+
       <div className="border-t border-slate-200/80 px-4 py-3 text-xs text-slate-500 dark:border-slate-700/80 dark:text-slate-400">
         共 {deps.length} 项 · 显示 {filtered.length} 项
         {outdatedCount > 0 && <span className="text-amber-600 dark:text-amber-400"> · {outdatedCount} 个过期</span>}
+        {vulnCount > 0 && <span className="text-red-600 dark:text-red-400"> · {vulnCount} 条已知漏洞</span>}
       </div>
     </div>
   )
