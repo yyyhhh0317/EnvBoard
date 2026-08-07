@@ -242,4 +242,47 @@ describe('validator 校验器', () => {
       expect(result).toEqual({ errors: 0, warnings: 0 })
     })
   })
+
+  describe('schema 规则（v1.3.0）', () => {
+    it('pattern 不匹配时产生 pattern-mismatch', () => {
+      const issues = validateVariables(
+        [makeVar({ key: 'APP_PORT', value: 'not-a-number' })],
+        [makeTpl({ key: 'APP_PORT', pattern: '^\\d{1,5}$' })],
+      )
+      const rules = issues.map((i) => i.rule)
+      expect(rules).toContain('pattern-mismatch')
+    })
+
+    it('pattern 匹配时不产生问题', () => {
+      const issues = validateVariables(
+        [makeVar({ key: 'APP_PORT', value: '8080' })],
+        [makeTpl({ key: 'APP_PORT', pattern: '^\\d{1,5}$' })],
+      )
+      expect(issues.some((i) => i.rule === 'pattern-mismatch')).toBe(false)
+    })
+
+    it('非法正则不误报', () => {
+      const issues = validateVariables(
+        [makeVar({ key: 'K', value: 'v' })],
+        [makeTpl({ key: 'K', pattern: '[' })],
+      )
+      expect(issues.some((i) => i.rule === 'pattern-mismatch')).toBe(false)
+    })
+
+    it('enum 不在允许集合时产生 enum-mismatch', () => {
+      const issues = validateVariables(
+        [makeVar({ key: 'NODE_ENV', value: 'beta' })],
+        [makeTpl({ key: 'NODE_ENV', enum: ['development', 'production'] })],
+      )
+      expect(issues.some((i) => i.rule === 'enum-mismatch')).toBe(true)
+    })
+
+    it('enum 命中允许集合时不产生问题', () => {
+      const issues = validateVariables(
+        [makeVar({ key: 'NODE_ENV', value: 'production' })],
+        [makeTpl({ key: 'NODE_ENV', enum: ['development', 'production'] })],
+      )
+      expect(issues.some((i) => i.rule === 'enum-mismatch')).toBe(false)
+    })
+  })
 })
