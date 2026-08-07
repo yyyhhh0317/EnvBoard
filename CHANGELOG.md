@@ -2,6 +2,24 @@
 
 本项目版本变更记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
+## [1.3.0] - 2026-08-07
+
+### 新增
+- **配置格式扩展**：
+  - `.ini` 解析：`[section]` 分段（key 展平为 `SECTION.KEY`）、`;` / `#` 注释、行内注释、引号值
+  - `application.properties` 解析：`=` / `:` 分隔、`#` / `!` 注释、反斜杠续行、`\:` `\=` `\\` `\n` `\t` `\uXXXX` 转义
+  - 粘贴文本时按内容信号自动识别格式（`[section]` → ini；点分小写 key → properties）
+- **任意两文件对比**：对比区域可上传 `.env` / `.ini` / `.properties` 任意 env 类文件，检查缺失 / 多余 / 空值并一键同步
+- **Schema 校验增强**：模板变量新增 `pattern`（正则）与 `enum`（允许取值）约束，违规值以 warning 提示；内置模板为 `NODE_ENV` / `LOG_LEVEL` 补充枚举、`APP_PORT` 补充数字格式
+- **TOML 内联表支持**：`{ version = "...", extras = [...] }` 写法可解析，覆盖 Poetry 常见依赖声明
+
+### 修复
+- **敏感值识别漏判**：`API_KEY` / `SECRET_KEY` / `ACCESS_KEY` / `DATABASE_URL` 等带分隔符的复合关键词此前无法命中（分段匹配把 `API_KEY` 拆成 `API` / `KEY`，而 `KEY` 为防误判已移出关键词表）。现改为「归一化后复合词匹配 + 分段单词匹配」双策略，仍不会误判 `MONKEY` / `AUTHOR`
+
+### 测试
+- 新增 10 个测试文件（ini / properties / envLike、sensitive、compare、envDiff、envPresets、lockfile、package.json、pyproject、multiEnvExporter、dependencyExporter），并扩展 validator 测试覆盖 pattern / enum
+- 套件共 260 例全部通过（21 个测试文件）
+
 ## [1.2.0] - 2026-08-07
 
 ### 新增
