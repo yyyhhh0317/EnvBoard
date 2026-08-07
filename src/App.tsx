@@ -10,6 +10,7 @@ import { DependencyEditor } from './components/DependencyEditor/DependencyEditor
 import { DependencyExport } from './components/DependencyExport/DependencyExport'
 import { TemplatePicker } from './components/TemplatePicker/TemplatePicker'
 import { SecretScanPanel } from './components/SecretScanPanel/SecretScanPanel'
+import { MonorepoScan } from './components/MonorepoScan/MonorepoScan'
 import { EnvSwitcher } from './components/EnvSwitcher/EnvSwitcher'
 import { EnvDiffView } from './components/EnvDiffView/EnvDiffView'
 import { MultiEnvExport } from './components/MultiEnvExport/MultiEnvExport'
@@ -56,6 +57,8 @@ export default function App() {
   // 当前应用的模板变量（用于校验）
   const [templateVars, setTemplateVars] = useState<TemplateVariable[]>([])
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false)
+  // Monorepo 扫描面板是否展开（v1.4.0）
+  const [monorepoOpen, setMonorepoOpen] = useState(false)
 
   // 依赖模式状态
   const [depResult, setDepResult] = useState<DependencyParseResult | null>(null)
@@ -512,6 +515,7 @@ export default function App() {
     setMultiEnv(null)
     setActiveEnv(null)
     setCustomEnvs([])
+    setMonorepoOpen(false)
     history.clearHistory()
     clearSession()
   }, [history, clearSession])
@@ -597,6 +601,35 @@ export default function App() {
         ) : (
           <>
             <EnvImport onImport={handleImport} />
+
+            {/* Monorepo 扫描入口（v1.4.0） */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
+                  <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">Monorepo 扫描</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    多选依赖清单文件，聚合查看共享依赖与版本冲突
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setMonorepoOpen((v) => !v)}
+                aria-expanded={monorepoOpen}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  monorepoOpen
+                    ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+              >
+                {monorepoOpen ? '收起' : '开始扫描'}
+              </button>
+            </div>
+            {monorepoOpen && <MonorepoScan />}
 
             {errors.length > 0 && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">

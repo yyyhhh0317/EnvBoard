@@ -186,6 +186,58 @@ export interface DepGraphNode {
 /** registry 来源类型 */
 export type RegistryType = 'npm' | 'pypi'
 
+// ===== Monorepo 扫描（v1.4.0）=====
+
+/** 单个包/项目的扫描结果 */
+export interface MonorepoPackage {
+  /** 包标识（优先 package.json name，兜底文件名去扩展名） */
+  name: string
+  /** 源文件名 */
+  filename: string
+  /** 项目类型（npm / pip / poetry） */
+  type: ProjectType
+  /** 项目元数据（name/version/description 等） */
+  meta: Record<string, string>
+  /** 依赖列表（含 scripts/engines，共享分析时过滤） */
+  dependencies: Dependency[]
+  /** 该文件解析错误 */
+  errors: string[]
+}
+
+/** 共享依赖项（多个包声明同一依赖） */
+export interface MonorepoSharedDep {
+  /** 依赖名 */
+  name: string
+  /** 声明该依赖的包与版本约束 */
+  declaredBy: { package: string; versionSpec: string }[]
+  /** 是否存在版本冲突（声明约束不一致） */
+  hasConflict: boolean
+}
+
+/** 版本冲突项 */
+export interface MonorepoConflict {
+  /** 依赖名 */
+  name: string
+  /** 各包声明（可能重复版本约束） */
+  versions: { package: string; versionSpec: string }[]
+}
+
+/** Monorepo 扫描结果 */
+export interface MonorepoScanResult {
+  /** 各包 */
+  packages: MonorepoPackage[]
+  /** 共享依赖（≥2 包声明，不含 scripts/engines） */
+  sharedDeps: MonorepoSharedDep[]
+  /** 版本冲突列表 */
+  conflicts: MonorepoConflict[]
+  /** 根 package.json 的 workspaces 模式（若有） */
+  workspaces: string[]
+  /** 是否为 monorepo：≥2 个包，或声明了 workspaces */
+  isMonorepo: boolean
+  /** 汇总错误（含被跳过的文件） */
+  errors: string[]
+}
+
 // ===== 配置模板与变量校验（v0.3.0）=====
 
 /** 模板分类 */

@@ -51,6 +51,7 @@ EnvBoard 用一个可视化界面解决这些问题。
 - 🔄 **版本查询**（可选）— 联网查询 npm / PyPI 最新版本，标记过期依赖。默认关闭，开启时明确提示会将包名发送到对应 registry
 - 🔐 **漏洞检查**（v1.4.0，可选）— 联网查询 npm audit / Google OSV 已知漏洞，按严重级别（严重 / 高危 / 中危 / 低危）展示公告、影响版本与详情链接
 - 🌳 **依赖关系图**（v1.4.0）— `package-lock.json` v3 可视化为可折叠依赖树，循环 / 重复引用自动标记
+- 📦 **Monorepo 扫描**（v1.4.0）— 一次多选多个依赖清单（`package.json` / `requirements.txt` / `pyproject.toml`，可混合格式），聚合展示各包依赖；自动识别 `workspaces` 模式、共享依赖与**版本冲突**，冲突项红色高亮
 - 📤 **格式化导出** — 按原始格式导出修改后的配置文件
 
 ### 配置模板与校验（v0.2.1 新增）
@@ -152,6 +153,7 @@ npm run preview    # 本地预览构建产物
 10. **自动保存** — 会话自动保存在浏览器本地，刷新或重新打开页面后自动恢复（敏感值加密存储）。「清空并重新开始」会清除已保存的会话。
 11. **密钥泄露检测** — 表格下方「密钥泄露检测」面板会按常见凭证格式扫描变量值；命中时自动展开，展示脱敏值与类型，可单条清除或一键清除全部。
 12. **导出脱敏** — 复制 / 下载含疑似泄露密钥的内容时，会先弹窗确认「导出并脱敏」或「仍然导出」，避免密钥经导出流出。
+13. **Monorepo 扫描** — 在导入区下方点「Monorepo 扫描 → 开始扫描」，多选多个依赖清单文件（可混合 `package.json` / `requirements.txt` / `pyproject.toml`）。结果按包聚合展示：各包依赖（可展开）、共享依赖表（标注「一致 / 冲突」）、版本冲突面板（红色高亮各包声明），并自动识别根 `package.json` 的 `workspaces` 模式。
 
 ### 支持的解析格式
 
@@ -196,7 +198,10 @@ src/
 │   ├── TemplatePicker/  # 配置模板选择
 │   ├── SecretScanPanel/ # 密钥泄露检测面板（v1.2.0）
 │   ├── ExportSecretWarning/ # 导出脱敏确认（v1.2.0）
-│   ├── DependencyTable/ # 依赖列表表格
+│   ├── DependencyTable/ # 依赖列表表格（含漏洞检查 / 依赖图，v1.4.0）
+│   ├── DependencyGraph/ # 依赖关系图（v1.4.0）
+│   ├── DependencyVulnReport/ # 漏洞报告（v1.4.0）
+│   ├── MonorepoScan/    # Monorepo 多包扫描（v1.4.0）
 │   ├── DependencyEditor/# 依赖编辑弹窗
 │   └── DependencyExport/# 依赖导出区域
 ├── hooks/
@@ -207,7 +212,9 @@ src/
 ├── utils/
 │   ├── parser/          # 解析器：.env / .ini / properties / package.json / requirements / pyproject / lockfile / TOML / 文件检测 / 多环境
 │   ├── formatter/       # 导出格式化：.env / JSON / YAML / 依赖
-│   ├── registry/        # npm / PyPI 版本查询（opt-in）
+│   ├── registry/        # npm / PyPI 版本查询、漏洞检查（opt-in）
+│   ├── graph/           # 依赖关系图构建（lockGraph，v1.4.0）
+│   ├── monorepo/        # Monorepo 多包扫描聚合（v1.4.0）
 │   ├── validator/       # 变量校验：类型 / 占位符 / 命名 / 重复
 │   ├── templates/       # 配置模板：内置模板库 / 自定义模板存取
 │   ├── persistence/     # 会话持久化：AES-GCM 加密 / localStorage 存储（v1.1.0）
@@ -291,7 +298,7 @@ src/
 - [x] v1.1.0 — 撤销 / 重做、本地会话持久化（敏感值 AES-GCM 加密）、键盘快捷键与无障碍（a11y）
 - [x] v1.2.0 — 密钥泄露检测（17 类凭证格式）、导出脱敏策略、一键清除泄露值
 - [x] v1.3.0 — `.ini` / `properties` 解析、任意两文件对比、Schema 校验（pattern / enum）、测试覆盖扩展（260 用例）
-- [x] v1.4.0 — 依赖漏洞检查（npm audit / OSV）、依赖关系图（package-lock.json v3 树形）
+- [x] v1.4.0 — 依赖漏洞检查（npm audit / OSV）、依赖关系图（package-lock.json v3 树形）、Monorepo 多包扫描（workspaces / 共享依赖 / 版本冲突）
 
 > 项目截图将在后续大版本发布时补充到 [docs/](./docs/) 目录。
 

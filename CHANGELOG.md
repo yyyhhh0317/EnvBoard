@@ -12,11 +12,15 @@
 - **依赖关系图**：`package-lock.json` v3 解析为可折叠依赖树
   - 依赖解析优先顶层 `node_modules/<name>`，兜底任意同名条目（近似可视化）
   - 循环 / 重复引用标记为「循环/重复」并停止展开，深度上限 30
+- **Monorepo 多包扫描**：一次多选多个依赖清单（`package.json` / `requirements.txt` / `pyproject.toml`，可混合格式）
+  - 按包聚合展示依赖（可折叠）；自动识别根 `package.json` 的 `workspaces` 模式
+  - 共享依赖检测（≥2 包声明，排除 scripts / engines）与**版本冲突**列表（红色高亮各包声明）
+  - 非依赖清单文件（env / lockfile）跳过并报告
 - **工具导出**：`extractVersion` / `normalizeVersion` 从 versionCheck 导出（漏洞检查复用）
 
 ### 测试
-- 新增 vulnerabilityCheck 8 例、lockGraph 5 例，lockfileParser 补依赖树断言
-- 套件共 290 例全部通过（26 个测试文件）
+- 新增 vulnerabilityCheck 8 例、lockGraph 5 例、monorepoScan 8 例，lockfileParser 补依赖树断言
+- 套件共 298 例全部通过（27 个测试文件）
 
 ## [1.3.0] - 2026-08-07
 

@@ -18,6 +18,11 @@ export default tseslint.config(
       // 核心：hooks 依赖数组必须完整
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      // 测试 mock 常以下划线前缀声明未使用的占位参数
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
 )
