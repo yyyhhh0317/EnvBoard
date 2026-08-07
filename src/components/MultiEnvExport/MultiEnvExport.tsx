@@ -1,11 +1,13 @@
-// 多环境导出：单文件（带 @env 分段）或多文件下载
-import { useState } from 'react'
+// 多环境导出：单文件（带 @env 分段）或多文件下载（含密钥脱敏确认 v1.2.0）
+import { useEffect, useMemo, useState } from 'react'
 import type { EnvName, EnvVariable } from '../../types'
 import {
   downloadFile,
   exportMultiEnvAsFiles,
   exportMultiEnvAsSingle,
 } from '../../utils/formatter/multiEnvExporter'
+import { redactSecrets, scanSecrets } from '../../utils/secretScan'
+import { ExportSecretWarning } from '../ExportSecretWarning/ExportSecretWarning'
 
 interface MultiEnvExportProps {
   envs: Record<EnvName, EnvVariable[]>
@@ -14,19 +16,45 @@ interface MultiEnvExportProps {
 
 export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
   const [mode, setMode] = useState<'single' | 'multi'>('multi')
+  // 导出脱敏（v1.2.0）
+  const [redact, setRedact] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'single' | 'multi' | null>(null)
 
-  const handleExportSingle = () => {
-    const content = exportMultiEnvAsSingle(envs, envOrder)
-    downloadFile('.env.all', content)
-  }
+  const allVars = useMemo(
+    () => envOrder.flatMap((e) => envs[e] ?? []),
+    [envs, envOrder],
+  )
+  const scan = useMemo(() => scanSecrets(allVars), [allVars])
 
-  const handleExportMulti = () => {
-    const files = exportMultiEnvAsFiles(envs, envOrder)
+  useEffect(() => {
+    if (scan.total === 0) setRedact(false)
+  }, [scan.total])
+
+  const runExport = (action: 'single' | 'multi', target: Record<EnvName, EnvVariable[]>) => {
+    if (action === 'single') {
+      downloadFile(exportMultiEnvAsSingle(target, envOrder), '.env.all')
+      return
+    }
+    const files = exportMultiEnvAsFiles(target, envOrder)
     // 浏览器无法批量打包，依次触发下载（间隔避免被拦截）
     files.forEach((f, i) => {
       setTimeout(() => downloadFile(f.filename, f.content), i * 200)
     })
   }
+
+  const handleClick = (action: 'single' | 'multi') => {
+    if (scan.total > 0) {
+      setPendingAction(action)
+      return
+    }
+    runExport(action, envs)
+  }
+
+  const redactedEnvs = useMemo(() => {
+    const out: Record<EnvName, EnvVariable[]> = {}
+    for (const e of envOrder) out[e] = redactSecrets(envs[e] ?? [])
+    return out
+  }, [envs, envOrder])
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -56,6 +84,29 @@ export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
         </button>
       </div>
 
+      {scan.total > 0 && !pendingAction && (
+        <p className="mb-2 text-xs text-red-600 dark:text-red-400">
+          ⚠ 检测到 {scan.total} 处疑似泄露的密钥{redact ? '，导出已自动脱敏' : '，导出前建议脱敏或清除'}
+        </p>
+      )}
+      {pendingAction && (
+        <ExportSecretWarning
+          total={scan.total}
+          onRedact={() => {
+            const action = pendingAction
+            setPendingAction(null)
+            setRedact(true)
+            runExport(action, redactedEnvs)
+          }}
+          onProceed={() => {
+            const action = pendingAction
+            setPendingAction(null)
+            runExport(action, envs)
+          }}
+          onCancel={() => setPendingAction(null)}
+        />
+      )}
+
       {mode === 'multi' ? (
         <div className="space-y-2">
           <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -72,7 +123,7 @@ export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
             ))}
           </ul>
           <button
-            onClick={handleExportMulti}
+            onClick={() => handleClick('multi')}
             className="mt-2 w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
           >
             下载全部（{envOrder.length} 个文件）
@@ -93,7 +144,7 @@ NODE_ENV=production
 ...`}
           </pre>
           <button
-            onClick={handleExportSingle}
+            onClick={() => handleClick('single')}
             className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
           >
             下载 .env.all

@@ -141,3 +141,24 @@ export function maskSecret(value: string): string {
   if (value.length <= 16) return `${value.slice(0, 2)}****${value.slice(-2)}`
   return `${value.slice(0, 6)}****${value.slice(-2)}`
 }
+
+/** 导出脱敏时替换泄露片段的标记 */
+export const REDACTION_MARKER = '[REDACTED]'
+
+/**
+ * 导出脱敏：将变量值中命中的密钥片段替换为 [REDACTED]。
+ * 仅影响返回的新变量列表，不修改原数据；无命中的变量保持原引用。
+ */
+export function redactSecrets(variables: EnvVariable[]): EnvVariable[] {
+  return variables.map((v) => {
+    const matches = scanSecretValue(v.value)
+    if (matches.length === 0) return v
+    let value = v.value
+    // 逆序替换，避免前面的替换改变后续索引
+    const sorted = [...matches].sort((a, b) => b.start - a.start)
+    for (const m of sorted) {
+      value = value.slice(0, m.start) + REDACTION_MARKER + value.slice(m.end)
+    }
+    return { ...v, value }
+  })
+}

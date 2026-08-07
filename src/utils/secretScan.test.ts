@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { EnvVariable } from '../types'
-import { maskSecret, scanSecretValue, scanSecrets } from './secretScan'
+import { maskSecret, redactSecrets, scanSecretValue, scanSecrets, REDACTION_MARKER } from './secretScan'
 
 function makeVar(key: string, value: string, id = key): EnvVariable {
   return {
@@ -92,5 +92,38 @@ describe('secretScan', () => {
     const value = `ghp_${'a'.repeat(36)}`
     const matches = scanSecretValue(`token=${value}`)
     expect(matches.map((m) => m.type)).toContain('github-pat')
+  })
+})
+
+describe('redactSecrets', () => {
+  it('replaces matched secret fragments with the marker', () => {
+    const variables = [makeVar('AWS_ACCESS_KEY_ID', `AKIA${'A'.repeat(16)}`, 'v1')]
+    const redacted = redactSecrets(variables)
+    expect(redacted[0].value).toBe(REDACTION_MARKER)
+  })
+
+  it('replaces all matches inside one value', () => {
+    const value = `prefix ${`ghp_${'a'.repeat(36)}`} middle ${`sk-${'b'.repeat(40)}`} end`
+    const redacted = redactSecrets([makeVar('TOKENS', value, 'v1')])
+    const occurrences = redacted[0].value.split(REDACTION_MARKER).length - 1
+    expect(occurrences).toBe(2)
+    expect(redacted[0].value).not.toContain('ghp_')
+    expect(redacted[0].value).not.toContain('sk-')
+  })
+
+  it('keeps clean variables unchanged (same reference)', () => {
+    const v = makeVar('PORT', '8080', 'v1')
+    const redacted = redactSecrets([v])
+    expect(redacted[0]).toBe(v)
+  })
+
+  it('scanning redacted variables yields no hits', () => {
+    const variables = [
+      makeVar('A', `AKIA${'A'.repeat(16)}`, 'v1'),
+      makeVar('B', `ghp_${'a'.repeat(36)}`, 'v2'),
+      makeVar('C', 'plain', 'v3'),
+    ]
+    const redacted = redactSecrets(variables)
+    expect(scanSecrets(redacted).total).toBe(0)
   })
 })
