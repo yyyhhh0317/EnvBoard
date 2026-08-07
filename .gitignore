@@ -13,6 +13,9 @@ dist-ssr
 dist-tmp
 *.local
 
+# 测试覆盖率
+coverage
+
 # TypeScript 增量构建产物
 *.tsbuildinfo
 

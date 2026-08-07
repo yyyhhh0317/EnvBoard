@@ -57,12 +57,12 @@ export function validateType(value: string, expectedType?: VariableType): boolea
   }
 }
 
-/** 命名规范校验：环境变量约定全大写 + 下划线 */
+/** 命名规范校验：环境变量约定全大写 + 下划线；点分 key（ini/properties 风格）不适用该规则 */
 export function validateNaming(key: string): ValidationRule[] {
   const issues: ValidationRule[] = []
   if (!key) return issues
-  // 含小写字母
-  if (/[a-z]/.test(key)) issues.push('naming-lowercase')
+  // 含小写字母（点分 key 属于 ini/properties 格式，跳过小写提示）
+  if (/[a-z]/.test(key) && !key.includes('.')) issues.push('naming-lowercase')
   // 含空格
   if (/\s/.test(key)) issues.push('naming-space')
   return issues
