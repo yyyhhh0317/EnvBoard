@@ -1,8 +1,8 @@
-// 对比区域：上传 .env.example 并对比
+// 对比区域：上传另一个 env 类文件（.env / .ini / .properties）并对比（v1.3.0 泛化）
 import { useMemo, useRef, useState } from 'react'
 import type { CompareItem, EnvVariable } from '../../types'
 import { compareVariables } from '../../utils/parser/compare'
-import { parseEnvFile } from '../../utils/parser/envParser'
+import { parseEnvLike } from '../../utils/parser/envLikeParser'
 
 interface EnvCompareProps {
   variables: EnvVariable[]
@@ -59,9 +59,9 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
     reader.onload = (e) => {
       const content = e.target?.result
       if (typeof content !== 'string') return
-      const parsed = parseEnvFile(content, file.name)
+      const parsed = parseEnvLike(content, file.name)
       if (parsed.variables.length === 0) {
-        setError('example 文件没有解析到变量，请检查格式')
+        setError('对比文件没有解析到变量，请检查格式')
         return
       }
       setError('')
@@ -78,17 +78,17 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-            对比 .env.example
+            对比另一个文件
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            上传模板文件，检查缺失、多余或空值的变量
+            上传 .env / .ini / .properties 文件，检查缺失、多余或空值的变量
           </p>
         </div>
         <div className="flex gap-2">
           <input
             ref={inputRef}
             type="file"
-            accept=".env,.env.*,text/plain"
+            accept=".env,.env.*,.ini,.properties,text/plain"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0]
@@ -101,7 +101,7 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
             onClick={() => inputRef.current?.click()}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
           >
-            {exampleVariables ? '更换 example' : '上传 .env.example'}
+            {exampleVariables ? '更换对比文件' : '上传对比文件'}
           </button>
           {missingItems.length > 0 && (
             <button
@@ -122,7 +122,7 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
 
       {!exampleVariables ? (
         <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-600">
-          未上传 example 文件，对比结果将显示在此处
+          未上传对比文件，对比结果将显示在此处
         </div>
       ) : (
         <>
@@ -140,7 +140,7 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
           </div>
 
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            模板文件：{exampleName}
+            对比文件：{exampleName}
           </div>
 
           {/* 对比列表 */}
@@ -151,7 +151,7 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
                   <th className="px-3 py-2">状态</th>
                   <th className="px-3 py-2">Key</th>
                   <th className="px-3 py-2">当前值</th>
-                  <th className="px-3 py-2">模板值</th>
+                  <th className="px-3 py-2">对比值</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">

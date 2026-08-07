@@ -176,6 +176,10 @@ export interface TemplateVariable {
   expectedType?: VariableType
   /** 是否必填 */
   required?: boolean
+  /** 值必须匹配的正则（字符串形式，v1.3.0） */
+  pattern?: string
+  /** 允许的取值集合（v1.3.0） */
+  enum?: string[]
 }
 
 /** 变量期望类型 */
@@ -209,6 +213,8 @@ export type ValidationRule =
   | 'naming-space'       // 命名含空格
   | 'duplicate-key'      // 重复 key
   | 'sensitive-empty'    // 敏感值为空
+  | 'pattern-mismatch'   // 不匹配 schema 正则（v1.3.0）
+  | 'enum-mismatch'      // 不在 schema 允许取值内（v1.3.0）
 
 // ===== 多环境管理（v0.3.0）=====
 

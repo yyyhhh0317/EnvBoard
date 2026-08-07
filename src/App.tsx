@@ -16,7 +16,8 @@ import { MultiEnvExport } from './components/MultiEnvExport/MultiEnvExport'
 import { useTheme } from './hooks/useTheme'
 import { useHistory } from './hooks/useHistory'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
-import { createEmptyVariable, parseEnvFile } from './utils/parser/envParser'
+import { createEmptyVariable } from './utils/parser/envParser'
+import { parseEnvLike } from './utils/parser/envLikeParser'
 import { parsePackageJson } from './utils/parser/packageJsonParser'
 import { parseRequirements } from './utils/parser/requirementsParser'
 import { parsePyproject } from './utils/parser/pyprojectParser'
@@ -128,8 +129,8 @@ export default function App() {
         setDepResult(null)
         return
       }
-      // 无分段：按普通单环境 .env 处理
-      const result = parseEnvFile(content, name)
+      // 无分段：按普通单环境 env 处理（.env / .ini / .properties 均可）
+      const result = parseEnvLike(content, name)
       setVariables(result.variables)
       setErrors(result.errors)
       setMultiEnv(null)

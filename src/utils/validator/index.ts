@@ -166,6 +166,40 @@ function validateVariable(
     })
   }
 
+  // 7. schema 正则校验（v1.3.0）
+  if (tpl?.pattern && v.value.trim()) {
+    let ok = true
+    try {
+      ok = new RegExp(tpl.pattern).test(v.value.trim())
+    } catch {
+      ok = true // 非法正则视为通过，避免误报
+    }
+    if (!ok) {
+      issues.push({
+        variableId: v.id,
+        key: v.key,
+        severity: 'warning',
+        rule: 'pattern-mismatch',
+        message: `值不匹配规则：/${tpl.pattern}/`,
+      })
+    }
+  }
+
+  // 8. schema 枚举校验（v1.3.0）
+  if (tpl?.enum && tpl.enum.length > 0 && v.value.trim()) {
+    const value = v.value.trim()
+    const allowed = tpl.enum
+    if (!allowed.includes(value)) {
+      issues.push({
+        variableId: v.id,
+        key: v.key,
+        severity: 'warning',
+        rule: 'enum-mismatch',
+        message: `值不在允许范围内（允许：${allowed.join(' / ')}）`,
+      })
+    }
+  }
+
   return issues
 }
 

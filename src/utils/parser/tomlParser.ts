@@ -73,9 +73,65 @@ export function parseToml(text: string): TomlTable {
   return root
 }
 
-/** 解析标量值：字符串 / 布尔 / 数字 */
+/** 按顶层逗号分割（忽略引号 / 数组 / 内联表内的逗号） */
+function splitTopLevel(input: string): string[] {
+  const parts: string[] = []
+  let buf = ''
+  let depth = 0
+  let inStr = false
+  let quote = ''
+  for (const ch of input) {
+    if (!inStr && (ch === '"' || ch === "'")) {
+      inStr = true
+      quote = ch
+      buf += ch
+      continue
+    }
+    if (inStr && ch === quote) {
+      inStr = false
+      buf += ch
+      continue
+    }
+    if (!inStr) {
+      if (ch === '[' || ch === '{') depth++
+      else if (ch === ']' || ch === '}') depth--
+      else if (ch === ',' && depth === 0) {
+        parts.push(buf)
+        buf = ''
+        continue
+      }
+    }
+    buf += ch
+  }
+  if (buf.trim()) parts.push(buf)
+  return parts
+}
+
+/** 解析内联表 { key = value, ... }，递归处理嵌套 */
+function parseInlineTable(raw: string): TomlTable {
+  const v = raw.trim()
+  const table: TomlTable = {}
+  if (!v.startsWith('{') || !v.endsWith('}')) return table
+  const inner = v.slice(1, -1)
+  for (const part of splitTopLevel(inner)) {
+    const eqIdx = part.indexOf('=')
+    if (eqIdx === -1) continue
+    const key = part.slice(0, eqIdx).trim().replace(/^["']|["']$/g, '')
+    const rawVal = part.slice(eqIdx + 1).trim()
+    if (rawVal.startsWith('[')) table[key] = parseStringArray(rawVal)
+    else if (rawVal.startsWith('{')) table[key] = parseInlineTable(rawVal)
+    else table[key] = parseScalar(rawVal)
+  }
+  return table
+}
+
+/** 解析标量值：字符串 / 布尔 / 数字 / 内联表 */
 function parseScalar(raw: string): TomlValue {
   const v = raw.trim()
+  // 内联表
+  if (v.startsWith('{') && v.endsWith('}')) {
+    return parseInlineTable(v)
+  }
   // 双引号字符串
   if (v.startsWith('"') && v.endsWith('"')) {
     return v.slice(1, -1).replace(/\\"/g, '"')
