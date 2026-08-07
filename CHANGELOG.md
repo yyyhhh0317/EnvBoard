@@ -2,6 +2,16 @@
 
 本项目版本变更记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
+## [1.2.0] - 2026-08-07
+
+### 新增
+- **密钥泄露检测**：
+  - 基于格式特征的密钥扫描：AWS Access Key / AWS Secret / GitHub Token / Slack / Stripe / Google API Key / OpenAI / 私钥（PEM）/ JWT / npm / PyPI / SendGrid / Twilio / Telegram / Mailgun
+  - 泄露报告面板：命中变量列表（脱敏值 + 类型徽章 + 严重级别），检测到泄露自动展开
+  - 单条清除 / 一键清除全部命中值；单环境模式清除操作支持撤销
+  - 全程浏览器本地执行，不发送任何数据
+- **测试**：新增 secretScan 11 例，套件共 197 例全部通过
+
 ## [1.1.0] - 2026-08-07
 
 ### 新增

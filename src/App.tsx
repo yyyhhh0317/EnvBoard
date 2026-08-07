@@ -9,6 +9,7 @@ import { DependencyTable } from './components/DependencyTable/DependencyTable'
 import { DependencyEditor } from './components/DependencyEditor/DependencyEditor'
 import { DependencyExport } from './components/DependencyExport/DependencyExport'
 import { TemplatePicker } from './components/TemplatePicker/TemplatePicker'
+import { SecretScanPanel } from './components/SecretScanPanel/SecretScanPanel'
 import { EnvSwitcher } from './components/EnvSwitcher/EnvSwitcher'
 import { EnvDiffView } from './components/EnvDiffView/EnvDiffView'
 import { MultiEnvExport } from './components/MultiEnvExport/MultiEnvExport'
@@ -410,6 +411,70 @@ export default function App() {
     [variables, commitVariables],
   )
 
+  // ===== 密钥泄露检测操作（v1.2.0）=====
+  const clearSecretInEnv = useCallback(
+    (id: string) => {
+      if (!multiEnv || !activeEnv) return
+      setMultiEnv((prev) => {
+        if (!prev || !activeEnv) return prev
+        const envVars = prev.envs[activeEnv] ?? []
+        return {
+          ...prev,
+          envs: {
+            ...prev.envs,
+            [activeEnv]: envVars.map((v) =>
+              v.id === id ? { ...v, value: '', isModified: true } : v,
+            ),
+          },
+        }
+      })
+    },
+    [multiEnv, activeEnv],
+  )
+
+  const handleClearSecret = useCallback(
+    (id: string) => {
+      if (isMultiEnvMode) {
+        clearSecretInEnv(id)
+        return
+      }
+      const target = variables.find((v) => v.id === id)
+      const next = variables.map((v) =>
+        v.id === id ? { ...v, value: '', isModified: true } : v,
+      )
+      commitVariables('edit', `清除泄露值 ${target?.key ?? ''}`, next, target?.key)
+    },
+    [isMultiEnvMode, clearSecretInEnv, variables, commitVariables],
+  )
+
+  const handleClearAllSecrets = useCallback(
+    (ids: string[]) => {
+      const idSet = new Set(ids)
+      if (isMultiEnvMode) {
+        if (!multiEnv || !activeEnv) return
+        setMultiEnv((prev) => {
+          if (!prev || !activeEnv) return prev
+          const envVars = prev.envs[activeEnv] ?? []
+          return {
+            ...prev,
+            envs: {
+              ...prev.envs,
+              [activeEnv]: envVars.map((v) =>
+                idSet.has(v.id) ? { ...v, value: '', isModified: true } : v,
+              ),
+            },
+          }
+        })
+        return
+      }
+      const next = variables.map((v) =>
+        idSet.has(v.id) ? { ...v, value: '', isModified: true } : v,
+      )
+      commitVariables('edit', `清除泄露密钥（${ids.length} 个）`, next)
+    },
+    [isMultiEnvMode, multiEnv, activeEnv, variables, commitVariables],
+  )
+
   // ===== 依赖模式操作 =====
   const handleSaveDep = useCallback((updated: Dependency) => {
     setDepResult((prev) =>
@@ -637,6 +702,14 @@ export default function App() {
                   <EnvExport variables={variables} />
                 </div>
               </>
+            )}
+
+            {isEnvMode && (
+              <SecretScanPanel
+                variables={displayVariables}
+                onClear={handleClearSecret}
+                onClearAll={handleClearAllSecrets}
+              />
             )}
 
             {isDepMode && depResult && (
