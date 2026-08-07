@@ -22,6 +22,14 @@ interface EnvTableProps {
   onOpenTemplate: () => void
   /** 搜索替换回调：传入替换后的新变量列表 */
   onReplace?: (next: EnvVariable[]) => void
+  /** 撤销可用（来自历史 hook） */
+  canUndo: boolean
+  /** 重做可用（来自历史 hook） */
+  canRedo: boolean
+  /** 撤销 */
+  onUndo: () => void
+  /** 重做 */
+  onRedo: () => void
 }
 
 export function EnvTable({
@@ -34,6 +42,10 @@ export function EnvTable({
   onToggleSensitive,
   onOpenTemplate,
   onReplace,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: EnvTableProps) {
   const [search, setSearch] = useState('')
   const [revealAll, setRevealAll] = useState(false)
@@ -109,6 +121,30 @@ export function EnvTable({
             placeholder="搜索变量名或值…"
             className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
           />
+        </div>
+
+        {/* 撤销 / 重做 */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="撤销 (Ctrl/Cmd+Z)"
+            className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a5 5 0 015 5v1M3 10l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+          <button
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="重做 (Ctrl/Cmd+Shift+Z)"
+            className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 10H11a5 5 0 00-5 5v1m10-6l-3-3m3 3l-3 3" />
+            </svg>
+          </button>
         </div>
 
         {issues.length > 0 && (

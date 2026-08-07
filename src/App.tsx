@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Header } from './components/Header/Header'
 import { EnvImport } from './components/EnvImport/EnvImport'
 import { EnvTable } from './components/EnvTable/EnvTable'
@@ -13,6 +13,7 @@ import { EnvSwitcher } from './components/EnvSwitcher/EnvSwitcher'
 import { EnvDiffView } from './components/EnvDiffView/EnvDiffView'
 import { MultiEnvExport } from './components/MultiEnvExport/MultiEnvExport'
 import { useTheme } from './hooks/useTheme'
+import { useHistory } from './hooks/useHistory'
 import { createEmptyVariable, parseEnvFile } from './utils/parser/envParser'
 import { parsePackageJson } from './utils/parser/packageJsonParser'
 import { parseRequirements } from './utils/parser/requirementsParser'
@@ -27,6 +28,7 @@ import type {
   DependencyParseResult,
   EnvName,
   EnvVariable,
+  HistoryAction,
   MultiEnvParseResult,
   ProjectType,
   TemplateVariable,
@@ -38,6 +40,9 @@ function genId(): string {
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
+
+  // 撤销/重做（v1.1.0）：仅跟踪单环境 .env 的 variables
+  const history = useHistory()
 
   // .env 模式状态
   const [variables, setVariables] = useState<EnvVariable[]>([])
@@ -98,10 +103,13 @@ export default function App() {
     return counts
   }, [multiEnv])
 
-  const handleImport = useCallback((content: string, name: string) => {
-    const type = detectProjectType(name, content)
-    setProjectType(type)
-    setFilename(name)
+  const handleImport = useCallback(
+    (content: string, name: string) => {
+      // 加载新文件视为全新会话，清空撤销历史
+      history.clearHistory()
+      const type = detectProjectType(name, content)
+      setProjectType(type)
+      setFilename(name)
 
     if (type === 'env') {
       // 先检测是否含 @env 分段标记
@@ -134,7 +142,7 @@ export default function App() {
       setMultiEnv(null)
       setActiveEnv(null)
     }
-  }, [])
+  }, [history])
 
   // 追加环境文件（多文件导入场景）
   const handleAppendFiles = useCallback((files: FileList) => {
@@ -267,25 +275,83 @@ export default function App() {
     [multiEnv, activeEnv],
   )
 
+  // 包装一次变量变更：记录历史快照 + 更新状态（仅单环境 .env 模式使用）
+  const commitVariables = useCallback(
+    (action: HistoryAction, description: string, next: EnvVariable[], variableKey?: string) => {
+      history.record(action, description, variables, next, variableKey)
+      setVariables(next)
+    },
+    [variables, history],
+  )
+
+  const handleUndo = useCallback(() => {
+    const snap = history.undo()
+    if (snap) setVariables(snap)
+  }, [history])
+
+  const handleRedo = useCallback(() => {
+    const snap = history.redo()
+    if (snap) setVariables(snap)
+  }, [history])
+
+  // 快捷键：Ctrl/Cmd+Z 撤销，Ctrl/Cmd+Shift+Z 或 Ctrl+Y 重做（仅在单环境 .env 模式）
+  useEffect(() => {
+    if (!(isEnvMode && !isMultiEnvMode)) return
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      if (!(e.ctrlKey || e.metaKey)) return
+      const key = e.key.toLowerCase()
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        handleUndo()
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault()
+        handleRedo()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isEnvMode, isMultiEnvMode, handleUndo, handleRedo])
+
   // ===== .env 模式操作 =====
-  const handleSaveEnv = useCallback((updated: EnvVariable) => {
-    setVariables((prev) =>
-      prev.map((v) => (v.id === updated.id ? { ...updated, isNew: false } : v)),
-    )
-    setEditingEnv(null)
-  }, [])
+  const handleSaveEnv = useCallback(
+    (updated: EnvVariable) => {
+      const next = variables.map((v) => (v.id === updated.id ? { ...updated, isNew: false } : v))
+      commitVariables(
+        updated.isNew ? 'add' : 'edit',
+        updated.isNew ? `添加 ${updated.key}` : `编辑 ${updated.key}`,
+        next,
+        updated.key,
+      )
+      setEditingEnv(null)
+    },
+    [variables, commitVariables],
+  )
 
-  const handleToggleSensitive = useCallback((id: string) => {
-    setVariables((prev) =>
-      prev.map((v) =>
+  const handleToggleSensitive = useCallback(
+    (id: string) => {
+      const target = variables.find((v) => v.id === id)
+      const next = variables.map((v) =>
         v.id === id ? { ...v, isSensitive: !v.isSensitive, isModified: true } : v,
-      ),
-    )
-  }, [])
+      )
+      commitVariables('toggle-sensitive', `${target?.key ?? '变量'} 敏感标记`, next, target?.key)
+    },
+    [variables, commitVariables],
+  )
 
-  const handleSync = useCallback((missing: CompareItem[]) => {
-    setVariables((prev) => {
-      const existing = new Set(prev.map((v) => v.key))
+  const handleDeleteEnv = useCallback(
+    (id: string) => {
+      const target = variables.find((v) => v.id === id)
+      const next = variables.filter((v) => v.id !== id)
+      commitVariables('delete', `删除 ${target?.key ?? '变量'}`, next, target?.key)
+    },
+    [variables, commitVariables],
+  )
+
+  const handleSync = useCallback(
+    (missing: CompareItem[]) => {
+      const existing = new Set(variables.map((v) => v.key))
       const toAdd: EnvVariable[] = missing
         .filter((m) => !existing.has(m.key))
         .map((m) => ({
@@ -295,9 +361,10 @@ export default function App() {
           comment: '从 .env.example 同步',
           isNew: true,
         }))
-      return [...prev, ...toAdd]
-    })
-  }, [])
+      commitVariables('sync', '从 .env.example 同步缺失项', [...variables, ...toAdd])
+    },
+    [variables, commitVariables],
+  )
 
   // ===== 依赖模式操作 =====
   const handleSaveDep = useCallback((updated: Dependency) => {
@@ -335,7 +402,8 @@ export default function App() {
     setMultiEnv(null)
     setActiveEnv(null)
     setCustomEnvs([])
-  }, [])
+    history.clearHistory()
+  }, [history])
 
   // 应用模板：合并变量并更新模板变量（用于后续校验）
   const handleApplyTemplate = useCallback(
@@ -482,6 +550,10 @@ export default function App() {
                   onDelete={handleDeleteMultiEnvVar}
                   onToggleSensitive={handleToggleMultiEnvSensitive}
                   onOpenTemplate={() => setTemplatePickerOpen(true)}
+                  canUndo={false}
+                  canRedo={false}
+                  onUndo={() => {}}
+                  onRedo={() => {}}
                   onReplace={(next) => {
                     if (!activeEnv) return
                     setMultiEnv((prev) =>
@@ -506,10 +578,14 @@ export default function App() {
                   hasTemplate={templateVars.length > 0}
                   onEdit={setEditingEnv}
                   onAdd={() => setEditingEnv(createEmptyVariable())}
-                  onDelete={(id) => setVariables((prev) => prev.filter((v) => v.id !== id))}
+                  onDelete={handleDeleteEnv}
                   onToggleSensitive={handleToggleSensitive}
                   onOpenTemplate={() => setTemplatePickerOpen(true)}
-                  onReplace={(next) => setVariables(next)}
+                  canUndo={history.canUndo}
+                  canRedo={history.canRedo}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
+                  onReplace={(next) => commitVariables('replace', '搜索替换', next)}
                 />
                 <div className="grid gap-6 lg:grid-cols-2">
                   <EnvCompare variables={variables} onSync={handleSync} />
