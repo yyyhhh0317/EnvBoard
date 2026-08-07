@@ -10,6 +10,7 @@ pnpm-debug.log*
 node_modules
 dist
 dist-ssr
+dist-tmp
 *.local
 
 # TypeScript 增量构建产物
@@ -29,6 +30,7 @@ vite.config.js
 # 编辑器 & 系统
 .vscode/*
 !.vscode/extensions.json
+.workbuddy
 .idea
 .DS_Store
 *.suo

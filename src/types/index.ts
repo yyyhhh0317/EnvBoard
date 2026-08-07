@@ -34,6 +34,35 @@ export interface ParseResult {
   filename: string
 }
 
+// ===== 撤销/重做（v1.1.0）=====
+
+/** 历史操作类型 */
+export type HistoryAction =
+  | 'add' // 新增变量
+  | 'edit' // 编辑变量
+  | 'delete' // 删除变量
+  | 'toggle-sensitive' // 切换敏感标记
+  | 'sync' // 从 .env.example 同步缺失项
+  | 'replace' // 搜索替换
+
+/** 单条历史记录（保存操作前后的变量快照） */
+export interface HistoryEntry {
+  /** 唯一标识 */
+  id: string
+  /** 操作类型 */
+  action: HistoryAction
+  /** 人类可读描述 */
+  description: string
+  /** 时间戳 */
+  timestamp: number
+  /** 关联变量名（便于展示） */
+  variableKey?: string
+  /** 操作前的变量快照 */
+  before: EnvVariable[]
+  /** 操作后的变量快照 */
+  after: EnvVariable[]
+}
+
 /** 对比状态 */
 export type CompareStatus = 'match' | 'missing' | 'extra' | 'empty'
 
