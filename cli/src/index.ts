@@ -1,5 +1,5 @@
 // EnvBoard CLI 入口
-// 命令路由：scan / status / install / uninstall / edit
+// 命令路由：scan / status / install / uninstall / edit / diff / sync / init
 import { Command } from 'commander'
 import chalk from 'chalk'
 import { scanCommand } from './commands/scan.js'
@@ -7,6 +7,9 @@ import { statusCommand } from './commands/status.js'
 import { installCommand } from './commands/install.js'
 import { uninstallCommand } from './commands/uninstall.js'
 import { editCommand } from './commands/edit.js'
+import { diffCommand } from './commands/diff.js'
+import { syncCommand } from './commands/sync.js'
+import { initCommand } from './commands/init.js'
 
 const program = new Command()
 
@@ -51,5 +54,31 @@ program
   .description('交互式编辑配置文件（升级版本号 / 删除依赖 / 修改 .env 变量）')
   .option('-f, --file <path>', '指定文件路径')
   .action(editCommand)
+
+// diff：对比两个配置文件（默认 .env vs .env.example）
+program
+  .command('diff')
+  .description('对比两个配置文件（默认 .env vs .env.example），输出缺失 / 多余 / 空值')
+  .option('-t, --target <path>', '目标文件路径（默认 .env）')
+  .option('-e, --example <path>', '模板文件路径（默认 .env.example）')
+  .option('-j, --json', '以 JSON 格式输出（便于脚本处理）')
+  .action(diffCommand)
+
+// sync：把 .env.example 中缺失的 key 追加到 .env
+program
+  .command('sync')
+  .description('从 .env.example 同步缺失的变量到 .env（不覆盖已有值）')
+  .option('-t, --target <path>', '目标文件路径（默认 .env）')
+  .option('-e, --example <path>', '模板文件路径（默认 .env.example）')
+  .option('-n, --dry-run', '仅预览要同步的变量，不实际写入')
+  .option('-j, --json', '以 JSON 格式输出（便于脚本处理）')
+  .action(syncCommand)
+
+// init：根据当前目录生成 .env / .env.example 模板
+program
+  .command('init')
+  .description('根据当前目录生成 .env（从 .env.example 复制）或 .env.example 模板（从 .env 反推）')
+  .option('-f, --force', '强制覆盖已存在的文件')
+  .action(initCommand)
 
 program.parse()

@@ -135,3 +135,67 @@ export function writeEnvFile(
 
   fs.writeFileSync(filepath, newLines.join('\n'), 'utf-8')
 }
+
+/**
+ * 向 .env 追加缺失的变量（保留注释与空行结构）
+ * 若 key 已存在则跳过（不覆盖已有值），返回实际追加与跳过的 key 列表
+ */
+export function appendEnvFile(
+  filepath: string,
+  items: { key: string; value?: string; comment?: string }[],
+): { appended: string[]; skipped: string[] } {
+  const content = fs.existsSync(filepath) ? fs.readFileSync(filepath, 'utf-8') : ''
+  const lines = content.length ? content.split(/\r?\n/) : []
+  const existing = new Set<string>()
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed === '' || trimmed.startsWith('#')) continue
+    const eqIdx = line.indexOf('=')
+    if (eqIdx === -1) continue
+    existing.add(line.slice(0, eqIdx).trim())
+  }
+
+  const appended: string[] = []
+  const skipped: string[] = []
+  for (const item of items) {
+    if (existing.has(item.key)) {
+      skipped.push(item.key)
+      continue
+    }
+    if (item.comment) lines.push(`# ${item.comment}`)
+    lines.push(`${item.key}=${item.value ?? ''}`)
+    appended.push(item.key)
+  }
+
+  fs.writeFileSync(filepath, lines.join('\n') + '\n', 'utf-8')
+  return { appended, skipped }
+}
+
+/**
+ * 从源 .env 生成 .env.example 模板（值替换为空，保留注释与空行）
+ */
+export function generateEnvTemplate(sourcePath: string, targetPath: string): { count: number } {
+  const content = fs.readFileSync(sourcePath, 'utf-8')
+  const lines = content.split(/\r?\n/)
+  const out: string[] = []
+  let count = 0
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed === '' || trimmed.startsWith('#')) {
+      out.push(line)
+      continue
+    }
+    const eqIdx = line.indexOf('=')
+    if (eqIdx === -1) {
+      out.push(line)
+      continue
+    }
+    const key = line.slice(0, eqIdx).trim()
+    out.push(`${key}=`)
+    count++
+  }
+
+  fs.writeFileSync(targetPath, out.join('\n') + '\n', 'utf-8')
+  return { count }
+}
