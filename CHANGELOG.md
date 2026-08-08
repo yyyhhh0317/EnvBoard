@@ -2,6 +2,31 @@
 
 本项目版本变更记录。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
+## [2.0.0] - 2026-08-08
+
+### 新增
+- **PWA 离线可安装**：
+  - 手写 Service Worker（`public/sw.js`）：应用壳预缓存 + 运行时缓存（HTML 网络优先、资源缓存优先、离线回退 index.html），版本化缓存键自动清理旧版
+  - Web App Manifest（standalone、主题色、192/512 图标 any+maskable），`scripts/gen_pwa_icons.py` 生成图标
+  - 仅生产环境注册 SW，不影响开发热更新
+- **中英双语（i18n）**：
+  - 零依赖自研：`src/i18n/`（Context + 扁平字典 + `t(key, params)` 插值），语言持久化并同步 `<html lang>`
+  - Header 一键切换 中文 / English；全站 19 个组件 + App 文案抽取（约 300 key），含撤销历史描述与环境预设标签
+- **CLI 增补**（`cli/`）：
+  - `envboard diff`：对比 .env 与 .env.example（可自定义路径），输出一致 / 缺失 / 多余 / 空值统计与明细
+  - `envboard sync`：把 example 缺失的 key 追加到 .env（不覆盖已有值），`-n` 预演，目标不存在自动创建
+  - `envboard init`：从 example 生成 .env，或从 .env 反推模板（值清空保留注释），无 `--force` 不覆盖
+- **组件层测试**：testing-library 覆盖 Header / EnvImport / EnvTable / EnvEditor / SecretScanPanel 核心交互（22 例）
+- **E2E 冒烟**：Playwright（`playwright.config.ts` + `e2e/smoke.spec.ts`）覆盖 导入 → 编辑 → 语言切换 主流程
+
+### 测试
+- 套件 298 → **320 例全部通过**（32 个测试文件）
+- Vitest include 扩展支持 `.tsx` 组件测试
+
+### 修复
+- TemplatePicker map 参数与 i18n `t` 命名冲突
+- EnvEditor 弹窗 hook 用名错误（`useModal` → `useModalFocus`）
+
 ## [1.4.0] - 2026-08-07
 
 ### 新增

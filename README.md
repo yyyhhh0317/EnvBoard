@@ -90,6 +90,12 @@ EnvBoard 用一个可视化界面解决这些问题。
 - ⚠️ **错误处理** — 空文件、无效格式、重复声明等友好提示
 - 🛡️ **本地运行** — 纯前端实现，数据不出浏览器（版本查询为可选联网功能）
 
+### 生态与平台化（v2.0.0 新增）
+- 📲 **PWA 离线可安装** — 手写 Service Worker + manifest：首次访问后离线可用，可安装到桌面 / 主屏；应用壳与静态资源缓存优先，HTML 网络优先并回退离线
+- 🌐 **中英双语** — 右上角一键切换 中文 / English，语言偏好本地记忆；零依赖自研 i18n（Context + 字典）
+- ⌨️ **CLI 增补** — 新增 `envboard diff`（对比 .env 与 .env.example）、`envboard sync`（同步缺失变量，`--dry-run` 预演）、`envboard init`（生成 .env / .env.example 模板）
+- 🧪 **组件层测试 + E2E 冒烟** — testing-library 覆盖核心组件交互（320 例全过）；Playwright 冒烟主流程（导入 → 编辑 → 语言切换）
+
 ## 项目截图
 
 <!-- 建议部署后补充以下截图到 docs/ 目录，并替换下方占位图： -->
@@ -137,6 +143,28 @@ npm run dev
 ```bash
 npm run build      # 输出到 dist/
 npm run preview    # 本地预览构建产物
+```
+
+### 运行测试
+
+```bash
+npm run test            # 单元 + 组件测试（Vitest，jsdom）
+npm run test:coverage   # 覆盖率报告
+
+# E2E 冒烟（Playwright，首次需安装浏览器）
+npm i -D @playwright/test
+npx playwright install chromium
+npx playwright test      # 启动 dev server 并跑 e2e/smoke.spec.ts
+```
+
+### CLI 使用（cli/ 子项目）
+
+```bash
+cd cli && npm install
+npm run dev -- scan          # 扫描当前目录配置
+npm run dev -- diff          # 对比 .env 与 .env.example
+npm run dev -- sync          # 同步缺失变量到 .env（-n 预演）
+npm run dev -- init          # 从 example 生成 .env / 从 .env 生成模板
 ```
 
 ## 使用说明
@@ -299,6 +327,7 @@ src/
 - [x] v1.2.0 — 密钥泄露检测（17 类凭证格式）、导出脱敏策略、一键清除泄露值
 - [x] v1.3.0 — `.ini` / `properties` 解析、任意两文件对比、Schema 校验（pattern / enum）、测试覆盖扩展（260 用例）
 - [x] v1.4.0 — 依赖漏洞检查（npm audit / OSV）、依赖关系图（package-lock.json v3 树形）、Monorepo 多包扫描（workspaces / 共享依赖 / 版本冲突）
+- [x] v2.0.0 — PWA 离线可安装、中英双语（i18n）、CLI 增补（diff / sync / init）、组件层测试与 E2E 冒烟
 
 > 项目截图将在后续大版本发布时补充到 [docs/](./docs/) 目录。
 

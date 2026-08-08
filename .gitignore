@@ -22,6 +22,7 @@ coverage
 # vite.config.ts 编译产物
 vite.config.d.ts
 vite.config.js
+vite.config.ts.timestamp-*
 
 # 配置文件（防止真实密钥被提交到公开仓库）
 .env
