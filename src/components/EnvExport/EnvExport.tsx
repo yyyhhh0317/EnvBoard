@@ -9,19 +9,14 @@ import {
 } from '../../utils/formatter/exporter'
 import { redactSecrets, scanSecrets } from '../../utils/secretScan'
 import { ExportSecretWarning } from '../ExportSecretWarning/ExportSecretWarning'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface EnvExportProps {
   variables: EnvVariable[]
 }
 
-const FORMATS: { value: ExportFormat; label: string; desc: string }[] = [
-  { value: 'env', label: '.env', desc: '标准格式' },
-  { value: 'env-example', label: '.env.example', desc: '模板（无值）' },
-  { value: 'json', label: 'JSON', desc: '结构化' },
-  { value: 'yaml', label: 'YAML', desc: '层级配置' },
-]
-
 export function EnvExport({ variables }: EnvExportProps) {
+  const { t } = useI18n()
   const [format, setFormat] = useState<ExportFormat>('env')
   const [includeSensitive, setIncludeSensitive] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -71,12 +66,19 @@ export function EnvExport({ variables }: EnvExportProps) {
     execute(exportVars, action)
   }
 
+  const FORMATS: { value: ExportFormat; label: string; desc: string }[] = [
+    { value: 'env', label: '.env', desc: t('envExport.formatEnv') },
+    { value: 'env-example', label: '.env.example', desc: t('envExport.formatExample') },
+    { value: 'json', label: 'JSON', desc: t('envExport.formatJson') },
+    { value: 'yaml', label: 'YAML', desc: t('envExport.formatYaml') },
+  ]
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="mb-4">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">导出</h2>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t('envExport.title')}</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          选择格式与选项，复制到剪贴板或下载文件
+          {t('envExport.desc')}
         </p>
       </div>
 
@@ -108,18 +110,20 @@ export function EnvExport({ variables }: EnvExportProps) {
           onChange={(e) => setIncludeSensitive(e.target.checked)}
           className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
         />
-        导出时包含敏感值真实内容（取消则输出 ****）
+        {t('envExport.includeSensitiveLabel')}
       </label>
 
       {/* 预览 */}
       <pre className="mb-3 max-h-64 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-xs leading-relaxed text-slate-100">
-        {output || '（无内容）'}
+        {output || t('common.noContent')}
       </pre>
 
       {/* 泄露提示（v1.2.0） */}
       {leaksInOutput && !pendingAction && (
         <p className="mb-2 text-xs text-red-600 dark:text-red-400">
-          ⚠ 检测到 {scan.total} 处疑似泄露的密钥{redact ? '，导出已自动脱敏' : '，导出前建议脱敏或清除'}
+          {redact
+            ? t('envExport.leakHintRedacted', { n: scan.total })
+            : t('envExport.leakHint', { n: scan.total })}
         </p>
       )}
       {pendingAction && (
@@ -146,13 +150,13 @@ export function EnvExport({ variables }: EnvExportProps) {
           onClick={() => handleExportClick('copy')}
           className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
         >
-          {copied ? '已复制 ✓' : '复制到剪贴板'}
+          {copied ? t('common.copied') : t('envExport.copy')}
         </button>
         <button
           onClick={() => handleExportClick('download')}
           className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
         >
-          下载文件
+          {t('envExport.download')}
         </button>
       </div>
     </div>

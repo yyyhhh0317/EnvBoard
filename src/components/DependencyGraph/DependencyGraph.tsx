@@ -1,6 +1,7 @@
 // 依赖关系图（v1.4.0）：可折叠树形展示 package-lock.json 依赖关系
 import { useState } from 'react'
 import type { DepGraphNode } from '../../types'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface DependencyGraphProps {
   graph: DepGraphNode
@@ -8,6 +9,7 @@ interface DependencyGraphProps {
 
 /** 树节点：可展开/折叠 */
 function TreeNode({ node, depth }: { node: DepGraphNode; depth: number }) {
+  const { t } = useI18n()
   const [open, setOpen] = useState(depth < 2)
   const hasChildren = node.children.length > 0
 
@@ -21,7 +23,7 @@ function TreeNode({ node, depth }: { node: DepGraphNode; depth: number }) {
           <button
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
-            aria-label={open ? '折叠' : '展开'}
+            aria-label={open ? t('depGraph.ariaCollapse') : t('depGraph.ariaExpand')}
             className="rounded p-0.5 text-slate-400 transition hover:text-slate-600 dark:hover:text-slate-200"
           >
             <svg
@@ -53,7 +55,7 @@ function TreeNode({ node, depth }: { node: DepGraphNode; depth: number }) {
         )}
         {node.duplicated && (
           <span className="rounded bg-amber-100 px-1 py-0.5 text-[10px] text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-            循环/重复
+            {t('depGraph.duplicated')}
           </span>
         )}
       </div>
@@ -69,11 +71,12 @@ function TreeNode({ node, depth }: { node: DepGraphNode; depth: number }) {
 }
 
 export function DependencyGraph({ graph }: DependencyGraphProps) {
+  const { t } = useI18n()
   const total = countNodes(graph)
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-700 dark:bg-slate-900/40">
       <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
-        依赖树（共 {total} 个节点）· 来源 package-lock.json · 点击箭头展开/折叠
+        {t('depGraph.desc', { n: total })}
       </p>
       <ul className="max-h-96 overflow-auto rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700 dark:bg-slate-900">
         <TreeNode node={graph} depth={0} />

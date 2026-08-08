@@ -10,6 +10,7 @@ import {
   countAffectedVariables,
   type ReplaceableField,
 } from '../../utils/searchReplace'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface EnvTableProps {
   variables: EnvVariable[]
@@ -47,6 +48,7 @@ export function EnvTable({
   onUndo,
   onRedo,
 }: EnvTableProps) {
+  const { t } = useI18n()
   const [search, setSearch] = useState('')
   const [revealAll, setRevealAll] = useState(false)
   const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set())
@@ -106,6 +108,12 @@ export function EnvTable({
     return v.value
   }
 
+  const FIELD_KEY: Record<ReplaceableField, string> = {
+    key: 'envTable.replaceKey',
+    value: 'envTable.replaceValue',
+    comment: 'envTable.replaceComment',
+  }
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
       {/* 工具栏 */}
@@ -118,8 +126,8 @@ export function EnvTable({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜索变量名或值…"
-            aria-label="搜索变量名或值"
+            placeholder={t('envTable.searchPlaceholder')}
+            aria-label={t('envTable.searchPlaceholder')}
             className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
           />
         </div>
@@ -129,8 +137,8 @@ export function EnvTable({
           <button
             onClick={onUndo}
             disabled={!canUndo}
-            title="撤销 (Ctrl/Cmd+Z)"
-            aria-label="撤销"
+            title={t('envTable.undo')}
+            aria-label={t('envTable.undo')}
             className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -140,8 +148,8 @@ export function EnvTable({
           <button
             onClick={onRedo}
             disabled={!canRedo}
-            title="重做 (Ctrl/Cmd+Shift+Z)"
-            aria-label="重做"
+            title={t('envTable.redo')}
+            aria-label={t('envTable.redo')}
             className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -158,30 +166,30 @@ export function EnvTable({
                 ? 'border-amber-400 bg-amber-50 text-amber-700 dark:border-amber-600 dark:bg-amber-900/30 dark:text-amber-300'
                 : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
             }`}
-            title="只看有校验问题的变量"
+            title={t('envTable.onlyIssues')}
           >
-            仅看问题（{issues.length}）
+            {t('envTable.onlyIssuesCount', { n: issues.length })}
           </button>
         )}
 
         <button
           onClick={() => setRevealAll((v) => !v)}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
-          title="显示/隐藏所有敏感值"
+          title={t('envTable.toggleSensitiveTitle')}
         >
-          {revealAll ? '隐藏敏感值' : '显示敏感值'}
+          {revealAll ? t('envTable.hideSensitive') : t('envTable.showSensitive')}
         </button>
 
         <button
           onClick={onOpenTemplate}
           className="rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 transition hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-          title="配置模板"
+          title={t('envTable.template')}
         >
           <span className="flex items-center gap-1.5">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            模板
+            {t('envTable.template')}
             {hasTemplate && <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />}
           </span>
         </button>
@@ -193,16 +201,16 @@ export function EnvTable({
               ? 'border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/30 dark:text-blue-300'
               : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600'
           }`}
-          title="搜索并替换变量名、值或注释"
+          title={t('envTable.replaceTitle')}
         >
-          搜索替换
+          {t('envTable.searchReplace')}
         </button>
 
         <button
           onClick={onAdd}
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
         >
-          + 添加变量
+          + {t('envTable.addVariable')}
         </button>
 
         {/* 搜索替换面板 */}
@@ -210,24 +218,24 @@ export function EnvTable({
           <div className="w-full rounded-lg border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <label htmlFor="replace-search" className="block text-xs font-medium text-slate-600 dark:text-slate-300">查找</label>
+                <label htmlFor="replace-search" className="block text-xs font-medium text-slate-600 dark:text-slate-300">{t('envTable.replaceFind')}</label>
                 <input
                   id="replace-search"
                   type="text"
                   value={replaceSearch}
                   onChange={(e) => setReplaceSearch(e.target.value)}
-                  placeholder="输入要查找的文本…"
+                  placeholder={t('envTable.replaceFindPh')}
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
                 />
               </div>
               <div>
-                <label htmlFor="replace-replacement" className="block text-xs font-medium text-slate-600 dark:text-slate-300">替换为</label>
+                <label htmlFor="replace-replacement" className="block text-xs font-medium text-slate-600 dark:text-slate-300">{t('envTable.replaceTo')}</label>
                 <input
                   id="replace-replacement"
                   type="text"
                   value={replaceReplacement}
                   onChange={(e) => setReplaceReplacement(e.target.value)}
-                  placeholder="输入替换文本…"
+                  placeholder={t('envTable.replaceToPh')}
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
                 />
               </div>
@@ -236,10 +244,9 @@ export function EnvTable({
             <div className="mt-3 flex flex-wrap items-center gap-4">
               {/* 字段选择 */}
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-slate-500 dark:text-slate-400">替换字段：</span>
+                <span className="text-slate-500 dark:text-slate-400">{t('envTable.replaceFields')}：</span>
                 {(['key', 'value', 'comment'] as ReplaceableField[]).map((f) => {
                   const checked = replaceFields.includes(f)
-                  const label = f === 'key' ? '变量名' : f === 'value' ? '变量值' : '注释'
                   return (
                     <label key={f} className="flex items-center gap-1 cursor-pointer">
                       <input
@@ -252,7 +259,7 @@ export function EnvTable({
                         }}
                         className="rounded"
                       />
-                      <span className="text-slate-600 dark:text-slate-300">{label}</span>
+                      <span className="text-slate-600 dark:text-slate-300">{t(FIELD_KEY[f])}</span>
                     </label>
                   )
                 })}
@@ -266,13 +273,13 @@ export function EnvTable({
                   onChange={(e) => setCaseSensitive(e.target.checked)}
                   className="rounded"
                 />
-                <span className="text-slate-600 dark:text-slate-300">区分大小写</span>
+                <span className="text-slate-600 dark:text-slate-300">{t('envTable.caseSensitive')}</span>
               </label>
 
               {/* 匹配统计 */}
               {replaceSearch && (
                 <span className="text-xs text-blue-700 dark:text-blue-300">
-                  {replaceMatches.length} 处匹配 · {countAffectedVariables(replaceMatches)} 个变量
+                  {t('envTable.matches', { n: replaceMatches.length })} · {t('envTable.matchVars', { n: countAffectedVariables(replaceMatches) })}
                 </span>
               )}
 
@@ -291,7 +298,7 @@ export function EnvTable({
                 disabled={!replaceSearch || replaceFields.length === 0 || replaceMatches.length === 0 || !onReplace}
                 className="ml-auto rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                替换全部（{replaceMatches.length}）
+                {t('envTable.replaceAll', { n: replaceMatches.length })}
               </button>
             </div>
 
@@ -301,10 +308,10 @@ export function EnvTable({
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                     <tr>
-                      <th className="px-3 py-1.5 text-left font-medium">变量</th>
-                      <th className="px-3 py-1.5 text-left font-medium">字段</th>
-                      <th className="px-3 py-1.5 text-left font-medium">原值</th>
-                      <th className="px-3 py-1.5 text-left font-medium">替换后</th>
+                      <th className="px-3 py-1.5 text-left font-medium">{t('envTable.colKey')}</th>
+                      <th className="px-3 py-1.5 text-left font-medium">{t('envTable.colField')}</th>
+                      <th className="px-3 py-1.5 text-left font-medium">{t('envTable.colBefore')}</th>
+                      <th className="px-3 py-1.5 text-left font-medium">{t('envTable.colAfter')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -312,13 +319,13 @@ export function EnvTable({
                       <tr key={`${m.variableId}-${m.field}`} className="border-t border-slate-100 dark:border-slate-800">
                         <td className="px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300">{m.key}</td>
                         <td className="px-3 py-1.5 text-slate-500 dark:text-slate-400">
-                          {m.field === 'key' ? '变量名' : m.field === 'value' ? '变量值' : '注释'}
+                          {t(FIELD_KEY[m.field])}
                         </td>
                         <td className="px-3 py-1.5 font-mono text-rose-600 dark:text-rose-400 line-through opacity-70">
-                          {m.before || '(空)'}
+                          {m.before || t('common.empty')}
                         </td>
                         <td className="px-3 py-1.5 font-mono text-emerald-600 dark:text-emerald-400">
-                          {m.after || '(空)'}
+                          {m.after || t('common.empty')}
                         </td>
                       </tr>
                     ))}
@@ -326,7 +333,7 @@ export function EnvTable({
                 </table>
                 {replaceMatches.length > 50 && (
                   <div className="border-t border-slate-100 px-3 py-1.5 text-center text-xs text-slate-400 dark:border-slate-800">
-                    还有 {replaceMatches.length - 50} 处匹配未显示
+                    {t('envTable.moreMatches', { n: replaceMatches.length - 50 })}
                   </div>
                 )}
               </div>
@@ -341,16 +348,16 @@ export function EnvTable({
           {errorCount > 0 && (
             <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
               <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-              {errorCount} 个错误
+              {t('envTable.errors', { n: errorCount })}
             </span>
           )}
           {warningCount > 0 && (
             <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              {warningCount} 个警告
+              {t('envTable.warnings', { n: warningCount })}
             </span>
           )}
-          <span className="text-slate-400">校验基于模板期望类型、命名规范与重复 key</span>
+          <span className="text-slate-400">{t('envTable.validateHint')}</span>
         </div>
       )}
 
@@ -359,19 +366,19 @@ export function EnvTable({
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900/50 dark:text-slate-400">
             <tr>
-              <th className="w-16 px-4 py-3">状态</th>
+              <th className="w-16 px-4 py-3">{t('envTable.colStatus')}</th>
               <th className="min-w-[160px] px-4 py-3">Key</th>
               <th className="px-4 py-3">Value</th>
-              <th className="hidden w-48 px-4 py-3 md:table-cell">注释</th>
-              <th className="w-24 px-4 py-3 text-center">校验</th>
-              <th className="w-40 px-4 py-3 text-right">操作</th>
+              <th className="hidden w-48 px-4 py-3 md:table-cell">{t('envTable.colComment')}</th>
+              <th className="w-24 px-4 py-3 text-center">{t('envTable.colValidate')}</th>
+              <th className="w-40 px-4 py-3 text-right">{t('envTable.colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
-                  {variables.length === 0 ? '暂无变量，请先导入或添加' : '没有匹配的变量'}
+                  {variables.length === 0 ? t('envTable.empty') : t('envTable.noMatch')}
                 </td>
               </tr>
             )}
@@ -391,21 +398,21 @@ export function EnvTable({
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-1">
                       {v.isSensitive && (
-                        <span title="敏感变量" className="inline-flex h-5 w-5 items-center justify-center rounded bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300">
+                        <span title={t('envTable.sensitive')} className="inline-flex h-5 w-5 items-center justify-center rounded bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300">
                           <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                           </svg>
                         </span>
                       )}
                       {v.isDisabled && (
-                        <span title="已注释/禁用" className="inline-flex h-5 w-5 items-center justify-center rounded bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+                        <span title={t('envTable.disabled')} className="inline-flex h-5 w-5 items-center justify-center rounded bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400">
                           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path strokeLinecap="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728A9 9 0 015.636 5.636" />
                           </svg>
                         </span>
                       )}
                       {v.isNew && !v.isModified && (
-                        <span title="新增" className="rounded bg-emerald-100 px-1 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">新</span>
+                        <span title={t('envTable.new')} className="rounded bg-emerald-100 px-1 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">{t('envTable.newTag')}</span>
                       )}
                     </div>
                   </td>
@@ -413,7 +420,7 @@ export function EnvTable({
                   {/* Key */}
                   <td className="px-4 py-3">
                     <span className="font-mono font-medium text-slate-800 dark:text-slate-100">
-                      {v.key || <span className="text-slate-400">（空）</span>}
+                      {v.key || <span className="text-slate-400">{t('common.empty')}</span>}
                     </span>
                     {v.error && (
                       <div className="mt-0.5 text-xs text-red-500">{v.error}</div>
@@ -431,7 +438,7 @@ export function EnvTable({
                           : 'text-slate-700 dark:text-slate-300'
                       }`}
                     >
-                      {displayValue(v) || <span className="text-slate-400 italic">（空值）</span>}
+                      {displayValue(v) || <span className="text-slate-400 italic">{t('envTable.emptyValue')}</span>}
                     </span>
                   </td>
 
@@ -475,7 +482,7 @@ export function EnvTable({
                         </div>
                       </div>
                     ) : (
-                      <span className="text-emerald-500" title="通过校验">
+                      <span className="text-emerald-500" title={t('envTable.passed')}>
                         <svg className="mx-auto h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
@@ -489,8 +496,8 @@ export function EnvTable({
                       {v.isSensitive && (
                         <button
                           onClick={() => toggleReveal(v.id)}
-                          title={revealed ? '隐藏' : '显示'}
-                          aria-label={revealed ? '隐藏敏感值' : '显示敏感值'}
+                          title={revealed ? t('envTable.hide') : t('envTable.reveal')}
+                          aria-label={revealed ? t('envTable.hideSensitive') : t('envTable.showSensitive')}
                           className="rounded p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
                         >
                           {revealed ? (
@@ -508,8 +515,8 @@ export function EnvTable({
 
                       <button
                         onClick={() => handleCopy(v)}
-                        title="复制"
-                        aria-label="复制"
+                        title={t('envTable.copy')}
+                        aria-label={t('envTable.copy')}
                         className="rounded p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
                       >
                         {copiedId === v.id ? (
@@ -525,8 +532,8 @@ export function EnvTable({
 
                       <button
                         onClick={() => onToggleSensitive(v.id)}
-                        title={v.isSensitive ? '取消敏感标记' : '标记为敏感'}
-                        aria-label={v.isSensitive ? '取消敏感标记' : '标记为敏感'}
+                        title={v.isSensitive ? t('envTable.unmarkSensitive') : t('envTable.markSensitive')}
+                        aria-label={v.isSensitive ? t('envTable.unmarkSensitive') : t('envTable.markSensitive')}
                         className={`rounded p-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-700 ${
                           v.isSensitive ? 'text-amber-500' : 'text-slate-500 dark:text-slate-400'
                         }`}
@@ -538,8 +545,8 @@ export function EnvTable({
 
                       <button
                         onClick={() => onEdit(v)}
-                        title="编辑"
-                        aria-label="编辑"
+                        title={t('envTable.edit')}
+                        aria-label={t('envTable.edit')}
                         className="rounded p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-emerald-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-emerald-400"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -549,8 +556,8 @@ export function EnvTable({
 
                       <button
                         onClick={() => onDelete(v.id)}
-                        title="删除"
-                        aria-label="删除"
+                        title={t('envTable.delete')}
+                        aria-label={t('envTable.delete')}
                         className="rounded p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -568,16 +575,16 @@ export function EnvTable({
 
       {/* 统计 */}
       <div className="border-t border-slate-200 px-4 py-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-        共 {variables.length} 个变量 · 显示 {filtered.length} 个
+        {t('envTable.footer', { total: variables.length, shown: filtered.length })}
         {variables.some((v) => v.isSensitive) && (
-          <span> · {variables.filter((v) => v.isSensitive).length} 个敏感</span>
+          <span> · {t('envTable.sensitiveCount', { n: variables.filter((v) => v.isSensitive).length })}</span>
         )}
         {issues.length > 0 && (
           <span>
-            {' '}· <span className="text-red-500">{errorCount} 错误</span> / <span className="text-amber-500">{warningCount} 警告</span>
+            {' '}· <span className="text-red-500">{t('envTable.errors', { n: errorCount })}</span> / <span className="text-amber-500">{t('envTable.warnings', { n: warningCount })}</span>
           </span>
         )}
-        {hasTemplate && <span> · 已应用模板</span>}
+        {hasTemplate && <span> · {t('envTable.templateApplied')}</span>}
       </div>
     </div>
   )

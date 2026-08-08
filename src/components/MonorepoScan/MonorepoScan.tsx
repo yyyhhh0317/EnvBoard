@@ -2,6 +2,7 @@
 import { useMemo, useRef, useState } from 'react'
 import type { MonorepoScanResult } from '../../types'
 import { scanMonorepo } from '../../utils/monorepo/monorepoScan'
+import { useI18n } from '../../i18n/index.tsx'
 
 const TYPE_LABEL: Record<string, string> = {
   npm: 'npm',
@@ -20,6 +21,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 }
 
 export function MonorepoScan() {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
   const [result, setResult] = useState<MonorepoScanResult | null>(null)
@@ -79,10 +81,10 @@ export function MonorepoScan() {
         <svg className="h-5 w-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
         </svg>
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">Monorepo 扫描</h2>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-white">{t('monorepo.title')}</h2>
       </div>
       <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
-        一次选择多个依赖清单（package.json / requirements.txt / pyproject.toml），聚合查看各包依赖、共享依赖与版本冲突。
+        {t('monorepo.desc')}
       </p>
 
       {/* 上传区 */}
@@ -110,9 +112,9 @@ export function MonorepoScan() {
           </svg>
         </div>
         <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-          {scanning ? '扫描中…' : '点击选择多个文件，或拖拽到此处'}
+          {scanning ? t('monorepo.scanning') : t('monorepo.dropHint')}
         </p>
-        <p className="mt-1 text-xs text-slate-400">支持多选，混合格式亦可（如 apps/web/package.json + libs/utils/pyproject.toml）</p>
+        <p className="mt-1 text-xs text-slate-400">{t('monorepo.dragHint')}</p>
         <input
           ref={inputRef}
           type="file"
@@ -129,28 +131,28 @@ export function MonorepoScan() {
           {/* 统计 */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-indigo-100 px-3 py-1 font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-              包 {result.packages.length}
+              {t('monorepo.packages', { n: result.packages.length })}
             </span>
             <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              共享依赖 {result.sharedDeps.length}
+              {t('monorepo.shared', { n: result.sharedDeps.length })}
             </span>
             {result.conflicts.length > 0 ? (
               <span className="rounded-full bg-red-100 px-3 py-1 font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                版本冲突 {result.conflicts.length}
+                {t('monorepo.conflicts', { n: result.conflicts.length })}
               </span>
             ) : (
               <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                无版本冲突
+                {t('monorepo.noConflict')}
               </span>
             )}
             {result.workspaces.length > 0 && (
               <span className="rounded-full bg-amber-100 px-3 py-1 font-mono font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                workspaces: {result.workspaces.join(', ')}
+                {t('monorepo.workspaces', { list: result.workspaces.join(', ') })}
               </span>
             )}
             {!result.isMonorepo && (
               <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                未检测到 monorepo 特征（仅 1 个包且无 workspaces）
+                {t('monorepo.notMonorepo')}
               </span>
             )}
           </div>
@@ -172,7 +174,7 @@ export function MonorepoScan() {
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z" />
                 </svg>
-                版本冲突（{result.conflicts.length}）
+                {t('monorepo.conflictTitle', { n: result.conflicts.length })}
               </div>
               <div className="divide-y divide-red-200/60 dark:divide-red-800/60">
                 {result.conflicts.map((c) => (
@@ -196,16 +198,16 @@ export function MonorepoScan() {
           {result.sharedDeps.length > 0 && (
             <div className="rounded-xl border border-slate-200 dark:border-slate-700">
               <div className="border-b border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
-                共享依赖（{result.sharedDeps.length}）
+                {t('monorepo.sharedTitle', { n: result.sharedDeps.length })}
               </div>
               <div className="max-h-64 overflow-y-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="sticky top-0 bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                     <tr>
-                      <th className="px-4 py-2 font-medium">依赖</th>
-                      <th className="px-4 py-2 font-medium">版本约束</th>
-                      <th className="px-4 py-2 font-medium">声明包</th>
-                      <th className="px-4 py-2 font-medium">状态</th>
+                      <th className="px-4 py-2 font-medium">{t('monorepo.colDep')}</th>
+                      <th className="px-4 py-2 font-medium">{t('monorepo.colSpec')}</th>
+                      <th className="px-4 py-2 font-medium">{t('monorepo.colPackages')}</th>
+                      <th className="px-4 py-2 font-medium">{t('monorepo.colStatus')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -224,9 +226,9 @@ export function MonorepoScan() {
                         </td>
                         <td className="px-4 py-2">
                           {d.hasConflict ? (
-                            <span className="rounded bg-red-100 px-1.5 py-0.5 font-medium text-red-600 dark:bg-red-900/40 dark:text-red-300">冲突</span>
+                            <span className="rounded bg-red-100 px-1.5 py-0.5 font-medium text-red-600 dark:bg-red-900/40 dark:text-red-300">{t('monorepo.conflict')}</span>
                           ) : (
-                            <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300">一致</span>
+                            <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300">{t('monorepo.consistent')}</span>
                           )}
                         </td>
                       </tr>
@@ -247,6 +249,7 @@ export function MonorepoScan() {
                   <button
                     onClick={() => toggleExpand(pkg.name)}
                     aria-expanded={isOpen}
+                    aria-label={isOpen ? t('monorepo.collapse') : pkg.name}
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-left"
                   >
                     <svg
@@ -263,7 +266,7 @@ export function MonorepoScan() {
                       {TYPE_LABEL[pkg.type] ?? pkg.type}
                     </span>
                     <span className="text-xs text-slate-400">{pkg.filename}</span>
-                    <span className="ml-auto text-xs text-slate-400">{deps.length} 项依赖</span>
+                    <span className="ml-auto text-xs text-slate-400">{t('monorepo.depsCount', { n: deps.length })}</span>
                   </button>
                   {isOpen && (
                     <div className="border-t border-slate-100 px-4 py-2 dark:border-slate-800">
@@ -275,7 +278,7 @@ export function MonorepoScan() {
                         </ul>
                       )}
                       {deps.length === 0 ? (
-                        <p className="py-2 text-xs text-slate-400">无依赖项</p>
+                        <p className="py-2 text-xs text-slate-400">{t('monorepo.noDeps')}</p>
                       ) : (
                         <table className="w-full text-left text-xs">
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

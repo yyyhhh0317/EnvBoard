@@ -17,6 +17,7 @@ import { MultiEnvExport } from './components/MultiEnvExport/MultiEnvExport'
 import { useTheme } from './hooks/useTheme'
 import { useHistory } from './hooks/useHistory'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
+import { useI18n } from './i18n/index.tsx'
 import { createEmptyVariable } from './utils/parser/envParser'
 import { parseEnvLike } from './utils/parser/envLikeParser'
 import { parsePackageJson } from './utils/parser/packageJsonParser'
@@ -43,6 +44,7 @@ function genId(): string {
 }
 
 export default function App() {
+  const { t } = useI18n()
   const { theme, toggleTheme } = useTheme()
 
   // 撤销/重做（v1.1.0）：仅跟踪单环境 .env 的 variables
@@ -369,13 +371,13 @@ export default function App() {
       const next = variables.map((v) => (v.id === updated.id ? { ...updated, isNew: false } : v))
       commitVariables(
         updated.isNew ? 'add' : 'edit',
-        updated.isNew ? `添加 ${updated.key}` : `编辑 ${updated.key}`,
+        updated.isNew ? `${t('hist.add')} ${updated.key}` : `${t('hist.edit')} ${updated.key}`,
         next,
         updated.key,
       )
       setEditingEnv(null)
     },
-    [variables, commitVariables],
+    [variables, commitVariables, t],
   )
 
   const handleToggleSensitive = useCallback(
@@ -384,18 +386,18 @@ export default function App() {
       const next = variables.map((v) =>
         v.id === id ? { ...v, isSensitive: !v.isSensitive, isModified: true } : v,
       )
-      commitVariables('toggle-sensitive', `${target?.key ?? '变量'} 敏感标记`, next, target?.key)
+      commitVariables('toggle-sensitive', `${target?.key ?? ''} ${t('hist.toggleSensitive')}`, next, target?.key)
     },
-    [variables, commitVariables],
+    [variables, commitVariables, t],
   )
 
   const handleDeleteEnv = useCallback(
     (id: string) => {
       const target = variables.find((v) => v.id === id)
       const next = variables.filter((v) => v.id !== id)
-      commitVariables('delete', `删除 ${target?.key ?? '变量'}`, next, target?.key)
+      commitVariables('delete', `${t('hist.delete')} ${target?.key ?? ''}`, next, target?.key)
     },
-    [variables, commitVariables],
+    [variables, commitVariables, t],
   )
 
   const handleSync = useCallback(
@@ -407,12 +409,12 @@ export default function App() {
           ...createEmptyVariable(),
           key: m.key,
           value: m.exampleValue ?? '',
-          comment: '从 .env.example 同步',
+          comment: t('envCompare.syncHint'),
           isNew: true,
         }))
-      commitVariables('sync', '从 .env.example 同步缺失项', [...variables, ...toAdd])
+      commitVariables('sync', t('hist.sync'), [...variables, ...toAdd])
     },
-    [variables, commitVariables],
+    [variables, commitVariables, t],
   )
 
   // ===== 密钥泄露检测操作（v1.2.0）=====
@@ -446,9 +448,9 @@ export default function App() {
       const next = variables.map((v) =>
         v.id === id ? { ...v, value: '', isModified: true } : v,
       )
-      commitVariables('edit', `清除泄露值 ${target?.key ?? ''}`, next, target?.key)
+      commitVariables('edit', `${t('hist.clearSecret')} ${target?.key ?? ''}`, next, target?.key)
     },
-    [isMultiEnvMode, clearSecretInEnv, variables, commitVariables],
+    [isMultiEnvMode, clearSecretInEnv, variables, commitVariables, t],
   )
 
   const handleClearAllSecrets = useCallback(
@@ -474,9 +476,9 @@ export default function App() {
       const next = variables.map((v) =>
         idSet.has(v.id) ? { ...v, value: '', isModified: true } : v,
       )
-      commitVariables('edit', `清除泄露密钥（${ids.length} 个）`, next)
+      commitVariables('edit', t('hist.clearSecretsAll', { n: ids.length }), next)
     },
-    [isMultiEnvMode, multiEnv, activeEnv, variables, commitVariables],
+    [isMultiEnvMode, multiEnv, activeEnv, variables, commitVariables, t],
   )
 
   // ===== 依赖模式操作 =====
@@ -582,15 +584,15 @@ export default function App() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
               <div className="relative">
                 <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                  环境配置，一目了然
+                  {t('app.heroTitle')}
                 </h2>
                 <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-emerald-50/90 sm:text-base">
-                  上传 <code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">.env</code>、<code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">package.json</code>、<code className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs">requirements.txt</code> 等配置文件，即可查看、编辑、对比与导出。敏感变量自动脱敏，数据仅在浏览器本地处理。
+                  {t('app.heroDesc')}
                 </p>
                 <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs">
-                  {['.env 解析', '依赖管理', '配置模板', '变量校验', '多环境切换', '敏感脱敏', '多格式导出', '暗色模式'].map((t) => (
-                    <span key={t} className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5 font-medium backdrop-blur-sm transition hover:bg-white/20">
-                      {t}
+                  {[t('app.heroTags'), t('app.heroTags2'), t('app.heroTags3'), t('app.heroTags4'), t('app.heroTags5'), t('app.heroTags6'), t('app.heroTags7'), t('app.heroTags8')].map((tag) => (
+                    <span key={tag} className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5 font-medium backdrop-blur-sm transition hover:bg-white/20">
+                      {tag}
                     </span>
                   ))}
                 </div>
@@ -611,9 +613,9 @@ export default function App() {
                   </svg>
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">Monorepo 扫描</div>
+                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('monorepo.title')}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">
-                    多选依赖清单文件，聚合查看共享依赖与版本冲突
+                    {t('monorepo.entryHint')}
                   </div>
                 </div>
               </div>
@@ -626,7 +628,7 @@ export default function App() {
                     : 'bg-indigo-600 text-white hover:bg-indigo-700'
                 }`}
               >
-                {monorepoOpen ? '收起' : '开始扫描'}
+                {monorepoOpen ? t('monorepo.collapse') : t('monorepo.start')}
               </button>
             </div>
             {monorepoOpen && <MonorepoScan />}
@@ -637,7 +639,7 @@ export default function App() {
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z" />
                   </svg>
-                  解析提示（{errors.length}）
+                  {t('app.parseErrors', { n: errors.length })}
                 </div>
                 <ul className="list-inside list-disc space-y-0.5 text-xs text-amber-700 dark:text-amber-400">
                   {errors.map((e, i) => (
@@ -665,9 +667,9 @@ export default function App() {
                   <button
                     onClick={() => appendInputRef.current?.click()}
                     className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
-                    title="追加 .env.xxx 环境文件"
+                    title={t('app.appendEnv')}
                   >
-                    + 追加环境文件
+                    + {t('app.appendEnv')}
                   </button>
                   <input
                     ref={appendInputRef}
@@ -729,7 +731,7 @@ export default function App() {
                   canRedo={history.canRedo}
                   onUndo={handleUndo}
                   onRedo={handleRedo}
-                  onReplace={(next) => commitVariables('replace', '搜索替换', next)}
+                  onReplace={(next) => commitVariables('replace', t('hist.replace'), next)}
                 />
                 <div className="grid gap-6 lg:grid-cols-2">
                   <EnvCompare variables={variables} onSync={handleSync} />
@@ -770,13 +772,12 @@ export default function App() {
                 onClick={handleClear}
                 className="rounded-lg px-4 py-2 text-sm text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               >
-                清空并重新开始
+                {t('app.clearAll')}
               </button>
             </div>
           </>
         )}
       </main>
-
       <EnvEditor
         variable={editingEnv}
         onSave={isMultiEnvMode ? handleSaveMultiEnvVar : handleSaveEnv}
@@ -792,8 +793,8 @@ export default function App() {
       />
 
       <footer className="border-t border-slate-200/80 py-6 text-center text-xs text-slate-400 dark:border-slate-800/80">
-        <p>EnvBoard · 环境配置可视化管理 · 数据仅在浏览器本地处理</p>
-        <p className="mt-1 text-slate-300 dark:text-slate-600">联网查版本为可选功能，需手动开启</p>
+        <p>EnvBoard · {t('app.footerTagline')}</p>
+        <p className="mt-1 text-slate-300 dark:text-slate-600">{t('app.footerNetHint')}</p>
       </footer>
     </div>
   )

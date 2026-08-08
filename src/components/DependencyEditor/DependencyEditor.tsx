@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import type { Dependency, DependencyCategory } from '../../types'
 import { useModalFocus } from '../../hooks/useModal'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface DependencyEditorProps {
   dependency: Dependency | null
@@ -19,17 +20,18 @@ const CATEGORIES: DependencyCategory[] = [
   'engines',
 ]
 
-const CATEGORY_LABEL: Record<string, string> = {
-  dependencies: '生产依赖',
-  devDependencies: '开发依赖',
-  peerDependencies: '同级依赖',
-  optionalDependencies: '可选依赖',
-  optional: '可选/扩展',
-  scripts: '脚本',
-  engines: '运行环境',
+const CATEGORY_KEY: Record<string, string> = {
+  dependencies: 'depEditor.categoryDeps',
+  devDependencies: 'depEditor.categoryDev',
+  peerDependencies: 'depEditor.categoryPeer',
+  optionalDependencies: 'depEditor.categoryOptional',
+  optional: 'depEditor.categoryOptionalExt',
+  scripts: 'depEditor.categoryScripts',
+  engines: 'depEditor.categoryEngines',
 }
 
 export function DependencyEditor({ dependency, onSave, onClose }: DependencyEditorProps) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState<Dependency | null>(dependency)
   // a11y：焦点圈定 / Escape 关闭 / 恢复焦点
   const dialogRef = useModalFocus(dependency !== null, onClose)
@@ -52,39 +54,39 @@ export function DependencyEditor({ dependency, onSave, onClose }: DependencyEdit
     >
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800">
-        <h2 id="dep-editor-title" className="mb-4 text-lg font-bold text-slate-900 dark:text-white">编辑依赖</h2>
+        <h2 id="dep-editor-title" className="mb-4 text-lg font-bold text-slate-900 dark:text-white">{t('depEditor.title')}</h2>
 
         <div className="space-y-4">
           <div>
             <label htmlFor="dep-editor-name" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              名称
+              {t('depEditor.name')}
             </label>
             <input
               id="dep-editor-name"
               type="text"
               value={draft.name}
               onChange={(e) => update({ name: e.target.value })}
-              placeholder="包名 / 脚本名"
+              placeholder={t('depEditor.namePlaceholder')}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
             />
           </div>
 
           <div>
             <label htmlFor="dep-editor-version" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-              {draft.isScript ? '命令' : '版本约束'}
+              {t('depEditor.versionOrCmd')}
             </label>
             <input
               id="dep-editor-version"
               type="text"
               value={draft.versionSpec}
               onChange={(e) => update({ versionSpec: e.target.value })}
-              placeholder={draft.isScript ? 'npm run ...' : '^1.0.0, >=2.0,<3.0'}
+              placeholder={draft.isScript ? t('depEditor.cmdPlaceholder') : t('depEditor.versionPlaceholder')}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
             />
           </div>
 
           <div>
-            <label htmlFor="dep-editor-category" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">分类</label>
+            <label htmlFor="dep-editor-category" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('depEditor.category')}</label>
             <select
               id="dep-editor-category"
               value={draft.category}
@@ -92,19 +94,19 @@ export function DependencyEditor({ dependency, onSave, onClose }: DependencyEdit
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
             >
               {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>
+                <option key={c} value={c}>{t(CATEGORY_KEY[c] ?? c)}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label htmlFor="dep-editor-comment" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">备注</label>
+            <label htmlFor="dep-editor-comment" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">{t('depEditor.comment')}</label>
             <input
               id="dep-editor-comment"
               type="text"
               value={draft.comment ?? ''}
               onChange={(e) => update({ comment: e.target.value })}
-              placeholder="可选说明"
+              placeholder={t('depEditor.commentPlaceholder')}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
             />
           </div>
@@ -115,14 +117,14 @@ export function DependencyEditor({ dependency, onSave, onClose }: DependencyEdit
             onClick={onClose}
             className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
           >
-            取消
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={!draft.name.trim()}
             className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            保存
+            {t('common.save')}
           </button>
         </div>
       </div>

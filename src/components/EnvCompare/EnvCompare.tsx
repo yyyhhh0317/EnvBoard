@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { CompareItem, EnvVariable } from '../../types'
 import { compareVariables } from '../../utils/parser/compare'
 import { parseEnvLike } from '../../utils/parser/envLikeParser'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface EnvCompareProps {
   variables: EnvVariable[]
@@ -11,31 +12,32 @@ interface EnvCompareProps {
 
 const STATUS_META: Record<
   CompareItem['status'],
-  { label: string; cls: string; dot: string }
+  { labelKey: string; cls: string; dot: string }
 > = {
   match: {
-    label: '匹配',
+    labelKey: 'envCompare.statusMatch',
     cls: 'text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-300',
     dot: 'bg-emerald-500',
   },
   missing: {
-    label: '缺失',
+    labelKey: 'envCompare.statusMissing',
     cls: 'text-red-700 bg-red-50 dark:bg-red-900/30 dark:text-red-300',
     dot: 'bg-red-500',
   },
   extra: {
-    label: '多余',
+    labelKey: 'envCompare.statusExtra',
     cls: 'text-blue-700 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300',
     dot: 'bg-blue-500',
   },
   empty: {
-    label: '空值',
+    labelKey: 'envCompare.statusEmpty',
     cls: 'text-amber-700 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-300',
     dot: 'bg-amber-500',
   },
 }
 
 export function EnvCompare({ variables, onSync }: EnvCompareProps) {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const [exampleVariables, setExampleVariables] = useState<EnvVariable[] | null>(null)
   const [exampleName, setExampleName] = useState<string>('')
@@ -61,7 +63,7 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
       if (typeof content !== 'string') return
       const parsed = parseEnvLike(content, file.name)
       if (parsed.variables.length === 0) {
-        setError('对比文件没有解析到变量，请检查格式')
+        setError(t('envCompare.noVarsError'))
         return
       }
       setError('')
@@ -78,10 +80,10 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-            对比另一个文件
+            {t('envCompare.title')}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            上传 .env / .ini / .properties 文件，检查缺失、多余或空值的变量
+            {t('envCompare.desc')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -101,14 +103,14 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
             onClick={() => inputRef.current?.click()}
             className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
           >
-            {exampleVariables ? '更换对比文件' : '上传对比文件'}
+            {exampleVariables ? t('envCompare.change') : t('envCompare.upload')}
           </button>
           {missingItems.length > 0 && (
             <button
               onClick={() => onSync(missingItems)}
               className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-700"
             >
-              一键同步缺失（{missingItems.length}）
+              {t('envCompare.sync', { n: missingItems.length })}
             </button>
           )}
         </div>
@@ -122,7 +124,7 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
 
       {!exampleVariables ? (
         <div className="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-400 dark:border-slate-600">
-          未上传对比文件，对比结果将显示在此处
+          {t('envCompare.empty')}
         </div>
       ) : (
         <>
@@ -134,13 +136,13 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
                 className={`rounded-lg px-3 py-2 text-center ${STATUS_META[s].cls}`}
               >
                 <div className="text-lg font-bold">{counts[s]}</div>
-                <div className="text-xs">{STATUS_META[s].label}</div>
+                <div className="text-xs">{t(STATUS_META[s].labelKey)}</div>
               </div>
             ))}
           </div>
 
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            对比文件：{exampleName}
+            {t('envCompare.templateFile')}：{exampleName}
           </div>
 
           {/* 对比列表 */}
@@ -148,10 +150,10 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                 <tr>
-                  <th className="px-3 py-2">状态</th>
+                  <th className="px-3 py-2">{t('envCompare.colStatus')}</th>
                   <th className="px-3 py-2">Key</th>
-                  <th className="px-3 py-2">当前值</th>
-                  <th className="px-3 py-2">对比值</th>
+                  <th className="px-3 py-2">{t('envCompare.colCurrent')}</th>
+                  <th className="px-3 py-2">{t('envCompare.colTemplate')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -162,7 +164,7 @@ export function EnvCompare({ variables, onSync }: EnvCompareProps) {
                         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_META[item.status].cls}`}
                       >
                         <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[item.status].dot}`} />
-                        {STATUS_META[item.status].label}
+                        {t(STATUS_META[item.status].labelKey)}
                       </span>
                     </td>
                     <td className="px-3 py-2 font-mono text-slate-800 dark:text-slate-200">

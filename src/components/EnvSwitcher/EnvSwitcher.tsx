@@ -2,6 +2,18 @@
 import { useState } from 'react'
 import type { EnvMeta, EnvName } from '../../types'
 import { getEnvMeta } from '../../utils/parser/envPresets'
+import { useI18n } from '../../i18n/index.tsx'
+
+/** 环境预设名 -> 字典 key（自定义环境 label 用环境名本身） */
+function presetLabelKey(name: string): string | null {
+  const map: Record<string, string> = {
+    development: 'envPreset.development',
+    test: 'envPreset.test',
+    staging: 'envPreset.staging',
+    production: 'envPreset.production',
+  }
+  return map[name] ?? null
+}
 
 interface EnvSwitcherProps {
   envOrder: EnvName[]
@@ -80,6 +92,7 @@ export function EnvSwitcher({
   onAddCustom,
   onRemoveCustom,
 }: EnvSwitcherProps) {
+  const { t } = useI18n()
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
 
@@ -102,13 +115,14 @@ export function EnvSwitcher({
     <div className="rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/50">
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-          环境：
+          {t('envSwitcher.envs')}
         </span>
         {metas.map((meta) => {
           const classes = getColorClasses(meta.color)
           const isActive = activeEnv === meta.name
           const count = envCounts[meta.name] ?? 0
           const isCustom = customEnvs.includes(meta.name)
+          const label = presetLabelKey(meta.name) ? t(presetLabelKey(meta.name)!) : meta.label
           return (
             <div key={meta.name} className="group relative inline-flex">
               <button
@@ -120,7 +134,7 @@ export function EnvSwitcher({
                 title={meta.filename ?? meta.name}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${classes.dot}`} />
-                {meta.label}
+                {label}
                 <span className={`rounded-full px-1.5 text-[10px] ${
                   isActive ? 'bg-white/20' : 'bg-slate-200/70 dark:bg-slate-700/70'
                 }`}>
@@ -133,8 +147,9 @@ export function EnvSwitcher({
                     e.stopPropagation()
                     onRemoveCustom(meta.name)
                   }}
-                  aria-label={`删除自定义环境 ${meta.label}`}
+                  aria-label={t('envSwitcher.deleteConfirm', { name: label })}
                   className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-slate-300 text-slate-600 opacity-0 transition hover:bg-red-500 hover:text-white focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:bg-slate-600 dark:text-slate-200"
+                  title={t('envSwitcher.deleteEnv')}
                 >
                   <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
@@ -159,8 +174,8 @@ export function EnvSwitcher({
                   setNewName('')
                 }
               }}
-              placeholder="环境名（如 preview）"
-              aria-label="新环境名称"
+              placeholder={t('envSwitcher.namePlaceholder')}
+              aria-label={t('envSwitcher.addEnv')}
               autoFocus
               className="w-32 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
             />
@@ -168,19 +183,19 @@ export function EnvSwitcher({
               onClick={handleAdd}
               className="rounded-full bg-emerald-600 px-2 py-1 text-xs text-white hover:bg-emerald-700"
             >
-              确定
+              {t('common.save')}
             </button>
           </div>
         ) : (
           <button
             onClick={() => setAdding(true)}
             className="inline-flex items-center gap-1 rounded-full border border-dashed border-slate-300 px-3 py-1.5 text-sm text-slate-500 transition hover:border-emerald-400 hover:text-emerald-600 dark:border-slate-600 dark:text-slate-400 dark:hover:border-emerald-500"
-            title="新增自定义环境"
+            title={t('envSwitcher.addEnv')}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            新增
+            {t('envSwitcher.addEnv')}
           </button>
         )}
       </div>

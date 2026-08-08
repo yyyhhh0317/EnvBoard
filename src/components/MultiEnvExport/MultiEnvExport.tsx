@@ -8,6 +8,7 @@ import {
 } from '../../utils/formatter/multiEnvExporter'
 import { redactSecrets, scanSecrets } from '../../utils/secretScan'
 import { ExportSecretWarning } from '../ExportSecretWarning/ExportSecretWarning'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface MultiEnvExportProps {
   envs: Record<EnvName, EnvVariable[]>
@@ -15,6 +16,7 @@ interface MultiEnvExportProps {
 }
 
 export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
+  const { t } = useI18n()
   const [mode, setMode] = useState<'single' | 'multi'>('multi')
   // 导出脱敏（v1.2.0）
   const [redact, setRedact] = useState(false)
@@ -59,7 +61,7 @@ export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <h3 className="mb-3 text-sm font-bold text-slate-800 dark:text-slate-100">
-        多环境导出
+        {t('multiEnvExport.title')}
       </h3>
       <div className="mb-3 flex gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-700">
         <button
@@ -70,7 +72,7 @@ export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
               : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
           }`}
         >
-          多文件（.env.xxx）
+          {t('multiEnvExport.modeMulti')}
         </button>
         <button
           onClick={() => setMode('single')}
@@ -80,13 +82,15 @@ export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
               : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
           }`}
         >
-          单文件（带分段）
+          {t('multiEnvExport.modeSingle')}
         </button>
       </div>
 
       {scan.total > 0 && !pendingAction && (
         <p className="mb-2 text-xs text-red-600 dark:text-red-400">
-          ⚠ 检测到 {scan.total} 处疑似泄露的密钥{redact ? '，导出已自动脱敏' : '，导出前建议脱敏或清除'}
+          {redact
+            ? t('envExport.leakHintRedacted', { n: scan.total })
+            : t('envExport.leakHint', { n: scan.total })}
         </p>
       )}
       {pendingAction && (
@@ -110,7 +114,7 @@ export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
       {mode === 'multi' ? (
         <div className="space-y-2">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            将每个环境导出为独立文件，浏览器会依次触发下载：
+            {t('multiEnvExport.multiHint')}
           </p>
           <ul className="space-y-1">
             {envOrder.map((envName) => (
@@ -118,7 +122,7 @@ export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
                 <span className="font-mono text-slate-700 dark:text-slate-300">
                   .env.{envName}
                 </span>
-                <span className="text-slate-400">{envs[envName]?.length ?? 0} 个变量</span>
+                <span className="text-slate-400">{t('header.vars', { n: envs[envName]?.length ?? 0 })}</span>
               </li>
             ))}
           </ul>
@@ -126,13 +130,13 @@ export function MultiEnvExport({ envs, envOrder }: MultiEnvExportProps) {
             onClick={() => handleClick('multi')}
             className="mt-2 w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
           >
-            下载全部（{envOrder.length} 个文件）
+            {t('multiEnvExport.downloadAll', { n: envOrder.length })}
           </button>
         </div>
       ) : (
         <div className="space-y-2">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            合并为单个文件，用 <code className="rounded bg-slate-100 px-1 font-mono dark:bg-slate-700"># @env</code> 标记分段：
+            {t('multiEnvExport.singleHint')}
           </p>
           <pre className="max-h-40 overflow-auto rounded-lg bg-slate-50 p-3 text-[11px] text-slate-600 dark:bg-slate-900/40 dark:text-slate-400">
 {`# @env development
@@ -147,7 +151,7 @@ NODE_ENV=production
             onClick={() => handleClick('single')}
             className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
           >
-            下载 .env.all
+            {t('multiEnvExport.downloadSingle')}
           </button>
         </div>
       )}

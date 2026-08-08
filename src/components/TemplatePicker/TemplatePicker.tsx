@@ -1,7 +1,7 @@
 // 配置模板选择弹窗：浏览内置/自定义模板，应用或保存为自定义
 import { useEffect, useMemo, useState } from 'react'
 import type { ConfigTemplate, EnvVariable, TemplateCategory } from '../../types'
-import { BUILTIN_TEMPLATES, CATEGORY_LABELS } from '../../utils/templates/builtinTemplates'
+import { BUILTIN_TEMPLATES } from '../../utils/templates/builtinTemplates'
 import {
   addCustomTemplate,
   deleteCustomTemplate,
@@ -11,6 +11,7 @@ import {
   variablesToTemplate,
 } from '../../utils/templates/templateStore'
 import { useModalFocus } from '../../hooks/useModal'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface TemplatePickerProps {
   open: boolean
@@ -20,7 +21,15 @@ interface TemplatePickerProps {
   onClose: () => void
 }
 
+const CAT_KEY: Record<TemplateCategory, string> = {
+  general: 'templatePicker.catGeneral',
+  frontend: 'templatePicker.catFrontend',
+  python: 'templatePicker.catPython',
+  custom: 'templatePicker.catCustom',
+}
+
 export function TemplatePicker({ open, variables, genId, onApply, onClose }: TemplatePickerProps) {
+  const { t } = useI18n()
   const [customList, setCustomList] = useState<ConfigTemplate[]>([])
   const [activeCategory, setActiveCategory] = useState<TemplateCategory | 'all'>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -45,11 +54,11 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
 
   const filtered = useMemo(() => {
     if (activeCategory === 'all') return allTemplates
-    return allTemplates.filter((t) => t.category === activeCategory)
+    return allTemplates.filter((tpl) => tpl.category === activeCategory)
   }, [allTemplates, activeCategory])
 
   const selected = useMemo(
-    () => allTemplates.find((t) => t.id === selectedId) ?? null,
+    () => allTemplates.find((tpl) => tpl.id === selectedId) ?? null,
     [allTemplates, selectedId],
   )
 
@@ -100,14 +109,14 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
         {/* 头部 */}
         <div className="flex items-center justify-between border-b border-slate-200 p-5 dark:border-slate-700">
           <div>
-            <h2 id="template-picker-title" className="text-lg font-bold text-slate-900 dark:text-white">配置模板</h2>
+            <h2 id="template-picker-title" className="text-lg font-bold text-slate-900 dark:text-white">{t('templatePicker.title')}</h2>
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              选择模板快速生成变量骨架，或把当前变量保存为自定义模板
+              {t('templatePicker.desc')}
             </p>
           </div>
           <button
             onClick={onClose}
-            aria-label="关闭"
+            aria-label={t('common.close')}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -119,7 +128,7 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
         {/* 分类切换 */}
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 px-5 py-3 dark:border-slate-700/80">
           {(['all', 'general', 'frontend', 'python', 'custom'] as const).map((cat) => {
-            const count = cat === 'all' ? allTemplates.length : allTemplates.filter((t) => t.category === cat).length
+            const count = cat === 'all' ? allTemplates.length : allTemplates.filter((tpl) => tpl.category === cat).length
             if (cat === 'custom' && count === 0) return null
             return (
               <button
@@ -132,7 +141,7 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
                 }`}
               >
-                {cat === 'all' ? '全部' : CATEGORY_LABELS[cat]}（{count}）
+                {cat === 'all' ? t('templatePicker.catAll') : t(CAT_KEY[cat])}（{count}）
               </button>
             )
           })}
@@ -144,36 +153,36 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
           <div className="w-1/2 overflow-y-auto border-r border-slate-200/80 p-3 dark:border-slate-700/80">
             {filtered.length === 0 ? (
               <div className="px-3 py-10 text-center text-sm text-slate-400">
-                暂无模板
+                {t('templatePicker.empty')}
               </div>
             ) : (
               <ul className="space-y-1.5">
-                {filtered.map((t) => (
-                  <li key={t.id} className="group relative">
+                {filtered.map((tpl) => (
+                  <li key={tpl.id} className="group relative">
                     <button
-                      onClick={() => setSelectedId(t.id)}
+                      onClick={() => setSelectedId(tpl.id)}
                       className={`w-full rounded-lg border px-3 py-2.5 text-left transition ${
-                        selectedId === t.id
+                        selectedId === tpl.id
                           ? 'border-emerald-500 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-900/20'
                           : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-700/50'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium text-slate-800 dark:text-slate-100">
-                          {t.name}
+                          {tpl.name}
                         </span>
                       </div>
                       <div className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">
-                        {t.description}
+                        {tpl.description}
                       </div>
                       <div className="mt-1 text-[10px] text-slate-400">
-                        {CATEGORY_LABELS[t.category]} · {t.variables.length} 个变量
+                        {t('templatePicker.metaLine', { category: t(CAT_KEY[tpl.category]), n: tpl.variables.length })}
                       </div>
                     </button>
-                    {t.category === 'custom' && (
+                    {tpl.category === 'custom' && (
                       <button
-                        onClick={() => handleDeleteCustom(t.id)}
-                        aria-label={`删除自定义模板 ${t.name}`}
+                        onClick={() => handleDeleteCustom(tpl.id)}
+                        aria-label={t('templatePicker.deleteCustom')}
                         className="absolute right-1 top-1 rounded p-1 text-slate-400 opacity-0 transition hover:bg-red-50 hover:text-red-500 focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 dark:hover:bg-red-900/30"
                       >
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -194,41 +203,41 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
                 <svg className="mb-2 h-10 w-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                选择左侧模板查看详情
+                {t('templatePicker.selectHint')}
               </div>
             )}
 
             {saveMode && (
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-                  保存当前变量为自定义模板
+                  {t('templatePicker.saveTitle')}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  将从当前 {variables.filter((v) => v.key && !v.isDisabled).length} 个变量生成模板，存储在浏览器本地。
+                  {t('templatePicker.saveDesc', { n: variables.filter((v) => v.key && !v.isDisabled).length })}
                 </p>
                 <div>
                   <label htmlFor="tpl-save-name" className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                    模板名称
+                    {t('templatePicker.nameLabel')}
                   </label>
                   <input
                     id="tpl-save-name"
                     type="text"
                     value={saveName}
                     onChange={(e) => setSaveName(e.target.value)}
-                    placeholder="例如：我的项目模板"
+                    placeholder={t('templatePicker.namePlaceholder')}
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
                   />
                 </div>
                 <div>
                   <label htmlFor="tpl-save-desc" className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                    描述（可选）
+                    {t('templatePicker.descLabel')}
                   </label>
                   <input
                     id="tpl-save-desc"
                     type="text"
                     value={saveDesc}
                     onChange={(e) => setSaveDesc(e.target.value)}
-                    placeholder="简短描述模板用途"
+                    placeholder={t('templatePicker.descPlaceholder')}
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
                   />
                 </div>
@@ -237,14 +246,14 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
                     onClick={() => setSaveMode(false)}
                     className="rounded-lg px-3 py-1.5 text-xs text-slate-500 transition hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
                   >
-                    取消
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={handleSaveCustom}
                     disabled={!saveName.trim()}
                     className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
                   >
-                    保存
+                    {t('common.save')}
                   </button>
                 </div>
               </div>
@@ -261,7 +270,7 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
                   </p>
                 </div>
                 <div className="mb-3 text-xs text-slate-400">
-                  {CATEGORY_LABELS[selected.category]} · {selected.variables.length} 个变量
+                  {t('templatePicker.metaLine', { category: t(CAT_KEY[selected.category]), n: selected.variables.length })}
                 </div>
                 <div className="space-y-1.5">
                   {selected.variables.map((v) => (
@@ -276,12 +285,12 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
                         <div className="flex items-center gap-1">
                           {v.required && (
                             <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-600 dark:bg-red-900/40 dark:text-red-300">
-                              必填
+                              {t('templatePicker.required')}
                             </span>
                           )}
                           {v.isSensitive && (
                             <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:bg-amber-900/40 dark:text-amber-300">
-                              敏感
+                              {t('templatePicker.sensitive')}
                             </span>
                           )}
                           {v.expectedType && (
@@ -312,21 +321,21 @@ export function TemplatePicker({ open, variables, genId, onApply, onClose }: Tem
             disabled={variables.filter((v) => v.key && !v.isDisabled).length === 0}
             className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
           >
-            另存为自定义模板
+            {t('templatePicker.saveAsCustom')}
           </button>
           <div className="flex gap-2">
             <button
               onClick={onClose}
               className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200"
             >
-              取消
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleApply}
               disabled={!selected}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              应用模板
+              {t('templatePicker.apply')}
             </button>
           </div>
         </div>

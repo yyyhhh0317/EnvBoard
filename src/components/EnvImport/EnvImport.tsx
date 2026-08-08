@@ -1,5 +1,6 @@
 // 导入区域：上传文件 / 粘贴文本 两种模式
 import { useRef, useState } from 'react'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface EnvImportProps {
   onImport: (content: string, filename: string) => void
@@ -8,6 +9,7 @@ interface EnvImportProps {
 type ImportMode = 'file' | 'paste'
 
 export function EnvImport({ onImport }: EnvImportProps) {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const [mode, setMode] = useState<ImportMode>('file')
   const [dragging, setDragging] = useState(false)
@@ -70,7 +72,7 @@ export function EnvImport({ onImport }: EnvImportProps) {
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
           </svg>
-          上传文件
+          {t('envImport.uploadFile')}
         </button>
         <button
           onClick={() => setMode('paste')}
@@ -83,7 +85,7 @@ export function EnvImport({ onImport }: EnvImportProps) {
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
-          粘贴文本
+          {t('envImport.pasteText')}
         </button>
       </div>
 
@@ -113,10 +115,10 @@ export function EnvImport({ onImport }: EnvImportProps) {
             </svg>
           </div>
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            点击选择文件，或拖拽到此处
+            {t('envImport.dropHint')}
           </p>
           <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-            支持 <code className="font-mono">.env</code> / <code className="font-mono">package.json</code> / <code className="font-mono">requirements.txt</code> / <code className="font-mono">pyproject.toml</code> / lockfile，自动识别格式
+            {t('envImport.supported')}
           </p>
           <input
             ref={inputRef}
@@ -134,7 +136,7 @@ export function EnvImport({ onImport }: EnvImportProps) {
           <textarea
             value={pasteValue}
             onChange={(e) => setPasteValue(e.target.value)}
-            placeholder={`# 粘贴配置文件内容，自动识别格式\n\n# .env 示例：\nDATABASE_URL=postgresql://localhost:5432/mydb\nAPI_KEY=your-api-key\n\n# 或粘贴 package.json / requirements.txt / pyproject.toml 等`}
+            placeholder={t('envImport.pastePlaceholder')}
             className="h-48 w-full resize-y rounded-xl border border-slate-300 bg-white p-3 font-mono text-sm text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-200"
             spellCheck={false}
             autoFocus
@@ -145,7 +147,7 @@ export function EnvImport({ onImport }: EnvImportProps) {
               disabled={!pasteValue.trim()}
               className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              解析
+              {t('envImport.parse')}
             </button>
           </div>
         </div>

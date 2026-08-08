@@ -1,5 +1,6 @@
 // 顶部导航栏
 import type { Theme } from '../../types'
+import { useI18n } from '../../i18n/index.tsx'
 
 interface HeaderProps {
   theme: Theme
@@ -9,6 +10,7 @@ interface HeaderProps {
 }
 
 export function Header({ theme, onToggleTheme, filename, variableCount }: HeaderProps) {
+  const { t, toggleLang, lang } = useI18n()
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/70 backdrop-blur-lg dark:border-slate-800/80 dark:bg-slate-950/70">
       {/* 无障碍：跳过导航直达主内容 */}
@@ -16,7 +18,7 @@ export function Header({ theme, onToggleTheme, filename, variableCount }: Header
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-emerald-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
       >
-        跳到主内容
+        {t('header.skipToContent')}
       </a>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-3">
@@ -32,7 +34,7 @@ export function Header({ theme, onToggleTheme, filename, variableCount }: Header
               EnvBoard
             </h1>
             <p className="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
-              环境配置可视化管理工具
+              {t('header.title')}
             </p>
           </div>
         </div>
@@ -48,10 +50,18 @@ export function Header({ theme, onToggleTheme, filename, variableCount }: Header
             </div>
           )}
           <button
+            onClick={toggleLang}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+            title={t('header.switchLang')}
+            aria-label={t('header.switchLang')}
+          >
+            {lang === 'zh' ? 'EN' : '中'}
+          </button>
+          <button
             onClick={onToggleTheme}
             className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
-            title={theme === 'light' ? '切换到暗色模式' : '切换到浅色模式'}
-            aria-label="切换主题"
+            title={t('header.themeToggle')}
+            aria-label={t('header.themeToggle')}
           >
             {theme === 'light' ? (
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
