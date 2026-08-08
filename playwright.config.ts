@@ -9,6 +9,8 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL: 'http://localhost:5173',
+    // 固定中文环境：navigator.language 决定 i18n 初始语言，默认界面应为中文
+    locale: 'zh-CN',
     trace: 'on-first-retry',
   },
   projects: [

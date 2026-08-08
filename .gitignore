@@ -16,6 +16,10 @@ dist-tmp
 # 测试覆盖率
 coverage
 
+# Playwright 产物
+test-results
+playwright-report
+
 # TypeScript 增量构建产物
 *.tsbuildinfo
 

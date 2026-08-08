@@ -368,7 +368,11 @@ export default function App() {
   // ===== .env 模式操作 =====
   const handleSaveEnv = useCallback(
     (updated: EnvVariable) => {
-      const next = variables.map((v) => (v.id === updated.id ? { ...updated, isNew: false } : v))
+      // 新增变量（id 不在现有列表）需追加；已存在的按 id 更新
+      const exists = variables.some((v) => v.id === updated.id)
+      const next = exists
+        ? variables.map((v) => (v.id === updated.id ? { ...updated, isNew: false } : v))
+        : [...variables, { ...updated, isNew: false }]
       commitVariables(
         updated.isNew ? 'add' : 'edit',
         updated.isNew ? `${t('hist.add')} ${updated.key}` : `${t('hist.edit')} ${updated.key}`,
